@@ -97,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* View Board link */}
+              {/* View Site link */}
               {proj?.slug && (
                 <a
                   href={`/${proj.slug}`}
@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   rel="noopener noreferrer"
                   className="text-sm text-cream/60 hover:text-cream transition-colors flex items-center gap-1.5"
                 >
-                  View Board
+                  View Site
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
                     <polyline points="15 3 21 3 21 9" />
