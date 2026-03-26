@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { publicBoard } from "@/lib/api";
 import type { PublicBoard, UpdateEntry, PaginationMeta } from "@/types";
 import { Badge, Button, EmptyState } from "@/components/ui";
-
-const LABEL_VARIANTS: Record<string, "success" | "info" | "warning"> = {
-  new: "success",
-  improved: "info",
-  fixed: "warning",
-};
-
-const LABELS = ["all", "new", "improved", "fixed"] as const;
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -30,9 +22,10 @@ export default function PublicUpdatesPage() {
 
   const [board, setBoard] = useState<PublicBoard | null>(null);
   const [updates, setUpdates] = useState<UpdateEntry[]>([]);
+  const [allUpdates, setAllUpdates] = useState<UpdateEntry[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
-  const [labelFilter, setLabelFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -43,20 +36,35 @@ export default function PublicUpdatesPage() {
     setLoading(true);
     try {
       const p: Record<string, string> = { page: String(page) };
-      if (labelFilter !== "all") p.label = labelFilter;
+      if (tagFilter !== "all") p.tag_id = tagFilter;
       const res = await publicBoard.updates(slug, p);
       setUpdates(res.data.updates);
       setMeta(res.data.meta);
+      // On first load (no filter), capture all updates for tag extraction
+      if (tagFilter === "all" && page === 1) {
+        setAllUpdates(res.data.updates);
+      }
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [slug, page, labelFilter]);
+  }, [slug, page, tagFilter]);
 
   useEffect(() => {
     fetchUpdates();
   }, [fetchUpdates]);
+
+  // Extract unique tags from loaded updates
+  const availableTags = useMemo(() => {
+    const tagMap = new Map<number, { id: number; name: string; color: string }>();
+    for (const u of allUpdates) {
+      if (u.tag) {
+        tagMap.set(u.tag.id, u.tag);
+      }
+    }
+    return Array.from(tagMap.values());
+  }, [allUpdates]);
 
   if (!board) {
     return (
@@ -103,25 +111,45 @@ export default function PublicUpdatesPage() {
 
       {/* Body */}
       <div className="max-w-3xl mx-auto px-6 py-6">
-        {/* Label filter chips */}
-        <div className="flex gap-2 mb-8">
-          {LABELS.map((label) => (
+        {/* Tag filter chips */}
+        {availableTags.length > 0 && (
+          <div className="flex gap-2 mb-8">
             <button
-              key={label}
               onClick={() => {
-                setLabelFilter(label);
+                setTagFilter("all");
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-full text-sm transition-colors cursor-pointer capitalize ${
-                labelFilter === label
+              className={`px-3 py-1.5 rounded-full text-sm transition-colors cursor-pointer ${
+                tagFilter === "all"
                   ? "bg-accent-soft text-accent font-medium"
                   : "bg-cream text-muted hover:text-subtle"
               }`}
             >
-              {label}
+              All
             </button>
-          ))}
-        </div>
+            {availableTags.map((tag) => (
+              <button
+                key={tag.id}
+                onClick={() => {
+                  setTagFilter(String(tag.id));
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors cursor-pointer ${
+                  tagFilter === String(tag.id)
+                    ? "font-medium"
+                    : "hover:opacity-80"
+                }`}
+                style={
+                  tagFilter === String(tag.id)
+                    ? { backgroundColor: `${tag.color}18`, color: tag.color }
+                    : { backgroundColor: "#f5f3ef", color: "#6b7280" }
+                }
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <p className="text-muted py-12 text-center">Loading updates...</p>
@@ -148,13 +176,15 @@ export default function PublicUpdatesPage() {
                   {/* Timeline dot */}
                   <div
                     className="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-surface"
-                    style={{ backgroundColor: board.accent_color }}
+                    style={{ backgroundColor: update.tag?.color || board.accent_color }}
                   />
 
-                  {/* Label badge */}
-                  <Badge variant={LABEL_VARIANTS[update.label]} size="sm">
-                    {update.label}
-                  </Badge>
+                  {/* Tag badge */}
+                  {update.tag && (
+                    <Badge color={update.tag.color} size="sm">
+                      {update.tag.name}
+                    </Badge>
+                  )}
 
                   {/* Title */}
                   <Link

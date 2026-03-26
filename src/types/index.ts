@@ -23,6 +23,7 @@ export interface Project {
   ideas_count: number;
   statuses: Status[];
   topics: Topic[];
+  update_tags: UpdateTag[];
   created_at: string;
 }
 
@@ -41,6 +42,14 @@ export interface Topic {
   color: string;
   position: number;
   ideas_count?: number;
+}
+
+export interface UpdateTag {
+  id: number;
+  name: string;
+  color: string;
+  position: number;
+  updates_count?: number;
 }
 
 export interface Idea {
@@ -103,7 +112,7 @@ export interface UpdateEntry {
   id: number;
   title: string;
   body?: string;
-  label: "new" | "improved" | "fixed";
+  tag: { id: number; name: string; color: string } | null;
   cover_image_url?: string | null;
   published: boolean;
   published_at: string | null;

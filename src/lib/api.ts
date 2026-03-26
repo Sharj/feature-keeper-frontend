@@ -124,6 +124,17 @@ export const topics = {
     request<void>(`/project/topics/${id}`, { method: "DELETE", token }),
 };
 
+// Admin Update Tags
+export const updateTags = {
+  list: (token: string) => request<import("@/types").UpdateTag[]>("/project/update_tags", { token }),
+  create: (token: string, body: { update_tag: { name: string; color: string; position?: number } }) =>
+    request<import("@/types").UpdateTag>("/project/update_tags", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { update_tag: Partial<{ name: string; color: string; position: number }> }) =>
+    request<import("@/types").UpdateTag>(`/project/update_tags/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/project/update_tags/${id}`, { method: "DELETE", token }),
+};
+
 // Admin Updates
 export const adminUpdates = {
   list: (token: string, params?: Record<string, string>) => {
@@ -132,9 +143,9 @@ export const adminUpdates = {
   },
   get: (token: string, id: number) =>
     request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { token }),
-  create: (token: string, body: { title: string; body: string; label: string; cover_image_url?: string; published_at?: string; idea_ids?: number[] }) =>
+  create: (token: string, body: { title: string; body: string; update_tag_id?: number; cover_image_url?: string; published_at?: string; idea_ids?: number[] }) =>
     request<import("@/types").UpdateEntry>("/project/updates", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { title?: string; body?: string; label?: string; cover_image_url?: string; published_at?: string | null; idea_ids?: number[] }) =>
+  update: (token: string, id: number, body: { title?: string; body?: string; update_tag_id?: number | null; cover_image_url?: string; published_at?: string | null; idea_ids?: number[] }) =>
     request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { method: "PATCH", body, token }),
   delete: (token: string, id: number) =>
     request<void>(`/project/updates/${id}`, { method: "DELETE", token }),

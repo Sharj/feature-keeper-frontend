@@ -3,8 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminUpdates, adminIdeas, ApiError } from "@/lib/api";
-import type { UpdateEntry, Idea } from "@/types";
+import { adminUpdates, adminIdeas, project as projectApi, ApiError } from "@/lib/api";
+import type { UpdateEntry, Idea, UpdateTag } from "@/types";
 import {
   Button,
   Input,
@@ -23,7 +23,8 @@ export default function EditUpdatePage() {
 
   const [update, setUpdate] = useState<UpdateEntry | null>(null);
   const [title, setTitle] = useState("");
-  const [label, setLabel] = useState("new");
+  const [updateTagId, setUpdateTagId] = useState<string>("");
+  const [tags, setTags] = useState<UpdateTag[]>([]);
   const [body, setBody] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [ideaIds, setIdeaIds] = useState<number[]>([]);
@@ -38,15 +39,17 @@ export default function EditUpdatePage() {
     Promise.all([
       adminUpdates.get(token, id),
       adminIdeas.list(token, { page: "1" }),
-    ]).then(([updateRes, ideasRes]) => {
+      projectApi.get(token),
+    ]).then(([updateRes, ideasRes, projRes]) => {
       const u = updateRes.data;
       setUpdate(u);
       setTitle(u.title);
-      setLabel(u.label);
+      setUpdateTagId(u.tag?.id ? String(u.tag.id) : "");
       setBody(u.body || "");
       setCoverImageUrl(u.cover_image_url || "");
       setIdeaIds(u.ideas?.map((i) => i.id) || []);
       setIdeas(ideasRes.data.ideas);
+      setTags(projRes.data.update_tags || []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [token, id]);
 
@@ -65,7 +68,7 @@ export default function EditUpdatePage() {
       await adminUpdates.update(token, id, {
         title,
         body,
-        label,
+        update_tag_id: updateTagId ? Number(updateTagId) : null,
         cover_image_url: coverImageUrl || undefined,
         idea_ids: ideaIds,
       });
@@ -86,7 +89,7 @@ export default function EditUpdatePage() {
       await adminUpdates.update(token, id, {
         title,
         body,
-        label,
+        update_tag_id: updateTagId ? Number(updateTagId) : null,
         cover_image_url: coverImageUrl || undefined,
         idea_ids: ideaIds,
       });
@@ -173,14 +176,11 @@ export default function EditUpdatePage() {
           />
 
           <Select
-            label="Label"
-            options={[
-              { value: "new", label: "New" },
-              { value: "improved", label: "Improved" },
-              { value: "fixed", label: "Fixed" },
-            ]}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            label="Tag"
+            placeholder="Select a tag..."
+            options={tags.map((t) => ({ value: String(t.id), label: t.name }))}
+            value={updateTagId}
+            onChange={(e) => setUpdateTagId(e.target.value)}
           />
 
           <Textarea

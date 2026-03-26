@@ -7,12 +7,6 @@ import { publicBoard } from "@/lib/api";
 import type { PublicBoard, UpdateEntry } from "@/types";
 import { Badge, Card } from "@/components/ui";
 
-const LABEL_VARIANTS: Record<string, "success" | "info" | "warning"> = {
-  new: "success",
-  improved: "info",
-  fixed: "warning",
-};
-
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-US", {
@@ -82,12 +76,14 @@ export default function PublicUpdateDetailPage() {
           Back to updates
         </Link>
 
-        {/* Label badge */}
-        <div className="mb-3">
-          <Badge variant={LABEL_VARIANTS[update.label]} size="sm">
-            {update.label}
-          </Badge>
-        </div>
+        {/* Tag badge */}
+        {update.tag && (
+          <div className="mb-3">
+            <Badge color={update.tag.color} size="sm">
+              {update.tag.name}
+            </Badge>
+          </div>
+        )}
 
         {/* Title */}
         <h1 className="font-serif text-2xl text-ink">{update.title}</h1>

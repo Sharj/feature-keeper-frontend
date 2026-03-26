@@ -13,11 +13,6 @@ import {
   PageHeader,
 } from "@/components/ui";
 
-const LABEL_BADGE: Record<string, { variant: "success" | "info" | "warning"; text: string }> = {
-  new: { variant: "success", text: "New" },
-  improved: { variant: "info", text: "Improved" },
-  fixed: { variant: "warning", text: "Fixed" },
-};
 
 type FilterTab = "all" | "published" | "drafts";
 
@@ -110,15 +105,16 @@ export default function UpdatesPage() {
       ) : (
         <div className="space-y-3">
           {updates.map((update) => {
-            const labelInfo = LABEL_BADGE[update.label] || LABEL_BADGE.new;
             return (
               <Link key={update.id} href={`/dashboard/updates/${update.id}/edit`}>
                 <Card padding="none" className="hover:shadow-md transition-shadow cursor-pointer">
                   <div className="p-4 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant={labelInfo.variant} size="sm">
-                        {labelInfo.text}
-                      </Badge>
+                      {update.tag && (
+                        <Badge color={update.tag.color} size="sm">
+                          {update.tag.name}
+                        </Badge>
+                      )}
                       <Badge
                         variant={update.published ? "success" : "default"}
                         size="sm"

@@ -3,8 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminUpdates, adminIdeas, ApiError } from "@/lib/api";
-import type { Idea } from "@/types";
+import { adminUpdates, adminIdeas, project as projectApi, ApiError } from "@/lib/api";
+import type { Idea, UpdateTag } from "@/types";
 import {
   Button,
   Input,
@@ -20,7 +20,8 @@ export default function NewUpdatePage() {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
-  const [label, setLabel] = useState("new");
+  const [updateTagId, setUpdateTagId] = useState<string>("");
+  const [tags, setTags] = useState<UpdateTag[]>([]);
   const [body, setBody] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [ideaIds, setIdeaIds] = useState<number[]>([]);
@@ -31,8 +32,12 @@ export default function NewUpdatePage() {
 
   useEffect(() => {
     if (!token) return;
-    adminIdeas.list(token, { page: "1" }).then((res) => {
-      setIdeas(res.data.ideas);
+    Promise.all([
+      adminIdeas.list(token, { page: "1" }),
+      projectApi.get(token),
+    ]).then(([ideasRes, projRes]) => {
+      setIdeas(ideasRes.data.ideas);
+      setTags(projRes.data.update_tags || []);
     }).catch(() => {});
   }, [token]);
 
@@ -51,7 +56,7 @@ export default function NewUpdatePage() {
       await adminUpdates.create(token, {
         title,
         body,
-        label,
+        update_tag_id: updateTagId ? Number(updateTagId) : undefined,
         cover_image_url: coverImageUrl || undefined,
         published_at: publish ? new Date().toISOString() : undefined,
         idea_ids: ideaIds.length > 0 ? ideaIds : undefined,
@@ -93,14 +98,11 @@ export default function NewUpdatePage() {
           />
 
           <Select
-            label="Label"
-            options={[
-              { value: "new", label: "New" },
-              { value: "improved", label: "Improved" },
-              { value: "fixed", label: "Fixed" },
-            ]}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            label="Tag"
+            placeholder="Select a tag..."
+            options={tags.map((t) => ({ value: String(t.id), label: t.name }))}
+            value={updateTagId}
+            onChange={(e) => setUpdateTagId(e.target.value)}
           />
 
           <Textarea
