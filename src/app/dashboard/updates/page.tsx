@@ -106,7 +106,7 @@ export default function UpdatesPage() {
         <div className="space-y-3">
           {updates.map((update) => {
             return (
-              <Link key={update.id} href={`/dashboard/updates/${update.id}/edit`}>
+              <Link key={update.id} href={`/dashboard/updates/${update.id}/edit`} className="block">
                 <Card padding="none" className="hover:shadow-md transition-shadow cursor-pointer">
                   <div className="p-4 space-y-2">
                     <div className="flex items-center gap-2">

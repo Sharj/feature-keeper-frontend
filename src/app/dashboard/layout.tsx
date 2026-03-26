@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </nav>
-      <main className="max-w-6xl mx-auto px-6 py-8 flex-1">{children}</main>
+      <main className="w-full max-w-6xl mx-auto px-6 py-8 flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-edge mt-auto">
