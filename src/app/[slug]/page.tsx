@@ -46,6 +46,7 @@ export default function PublicBoardPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitPendingApproval, setSubmitPendingApproval] = useState(false);
 
   useEffect(() => {
     setSessionId(getSessionId(slug));
@@ -122,13 +123,14 @@ export default function PublicBoardPage() {
     setSubmitError("");
     setSubmitLoading(true);
     try {
-      await publicBoard.createIdea(slug, {
+      const res = await publicBoard.createIdea(slug, {
         title: submitTitle,
         description: submitDesc || undefined,
         author_name: submitName,
         author_email: submitEmail,
         topic_ids: submitTopicIds.length > 0 ? submitTopicIds : undefined,
       });
+      setSubmitPendingApproval(!!res.data.pending_approval);
       setSubmitSuccess(true);
       setSubmitTitle("");
       setSubmitDesc("");
@@ -491,7 +493,9 @@ export default function PublicBoardPage() {
             </div>
             <p className="font-medium text-ink">Idea submitted!</p>
             <p className="text-sm text-subtle mt-1">
-              Thank you for your feedback.
+              {submitPendingApproval
+                ? "Thank you! Your idea will be visible after it's reviewed and approved by the team."
+                : "Thank you for your feedback."}
             </p>
           </div>
         ) : (

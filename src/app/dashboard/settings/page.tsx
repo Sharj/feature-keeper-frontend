@@ -41,6 +41,7 @@ export default function SettingsPage() {
   const [projWebsite, setProjWebsite] = useState("");
   const [projSlug, setProjSlug] = useState("");
   const [projAccent, setProjAccent] = useState("#c2410c");
+  const [projRequireApproval, setProjRequireApproval] = useState(false);
   const [projSaving, setProjSaving] = useState(false);
   const [projError, setProjError] = useState("");
   const [projSuccess, setProjSuccess] = useState("");
@@ -77,6 +78,7 @@ export default function SettingsPage() {
         setProjWebsite(p.website_url || "");
         setProjSlug(p.slug);
         setProjAccent(p.accent_color);
+        setProjRequireApproval(p.require_approval);
         setStatusList(p.statuses);
         setTopicList(p.topics);
       })
@@ -98,6 +100,7 @@ export default function SettingsPage() {
           website_url: projWebsite,
           slug: projSlug,
           accent_color: projAccent,
+          require_approval: projRequireApproval,
         },
       });
       setProj(res.data);
@@ -306,6 +309,27 @@ export default function SettingsPage() {
                 </div>
               </label>
             </div>
+          </div>
+          <div className="flex items-center justify-between py-3 border-t border-edge">
+            <div>
+              <label className="block text-sm font-medium text-ink">Require approval</label>
+              <p className="text-[13px] text-muted mt-0.5">New ideas from public users need admin approval before they appear on the board</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={projRequireApproval}
+              onClick={() => setProjRequireApproval(!projRequireApproval)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
+                projRequireApproval ? "bg-accent" : "bg-edge-strong"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ${
+                  projRequireApproval ? "translate-x-5.5" : "translate-x-0.5"
+                } mt-0.5`}
+              />
+            </button>
           </div>
           <Button type="submit" loading={projSaving}>
             {projSaving ? "Saving..." : "Save Changes"}

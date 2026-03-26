@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [viewFilter, setViewFilter] = useState<"all" | "pending">("all");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, Comment[]>>({});
@@ -41,8 +42,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(page) };
-      if (search) params.search = search;
+      if (search) params.q = search;
       if (statusFilter) params.status_id = statusFilter;
+      if (viewFilter === "pending") params.pending = "true";
       const res = await adminIdeas.list(token, params);
       setIdeas(res.data.ideas);
       setMeta(res.data.meta);
@@ -51,7 +53,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, search, statusFilter]);
+  }, [token, page, search, statusFilter, viewFilter]);
 
   useEffect(() => {
     if (token) {
@@ -150,6 +152,16 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleApprove(ideaId: number) {
+    if (!token) return;
+    try {
+      const res = await adminIdeas.approve(token, ideaId);
+      setIdeas((prev) => prev.map((i) => (i.id === ideaId ? res.data : i)));
+    } catch {
+      // ignore
+    }
+  }
+
   async function handleDeleteIdea(ideaId: number) {
     if (!token) return;
     if (!window.confirm("Are you sure you want to delete this idea?")) return;
@@ -223,6 +235,26 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-serif text-ink">Ideas</h1>
           <Badge className="bg-accent-soft text-accent">{ideaCountLabel}</Badge>
+          {proj?.require_approval && (
+            <div className="flex items-center gap-1 ml-2 bg-cream rounded-lg p-0.5">
+              <button
+                onClick={() => { setViewFilter("all"); setPage(1); }}
+                className={`px-3 py-1 text-sm rounded-md transition-colors cursor-pointer ${
+                  viewFilter === "all" ? "bg-surface text-ink shadow-xs font-medium" : "text-muted hover:text-subtle"
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => { setViewFilter("pending"); setPage(1); }}
+                className={`px-3 py-1 text-sm rounded-md transition-colors cursor-pointer ${
+                  viewFilter === "pending" ? "bg-surface text-ink shadow-xs font-medium" : "text-muted hover:text-subtle"
+                }`}
+              >
+                Pending
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end">
           <Input
@@ -329,6 +361,9 @@ export default function DashboardPage() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {idea.pending && (
+                      <Badge variant="warning" size="sm">Pending Approval</Badge>
+                    )}
                     {idea.status && (
                       <Badge color={idea.status.color} dot size="sm">
                         {idea.status.name}
@@ -377,6 +412,14 @@ export default function DashboardPage() {
                   )}
 
                   <div className="flex items-center gap-2 mb-4">
+                    {idea.pending && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(idea.id)}
+                      >
+                        Approve
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"

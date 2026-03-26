@@ -64,7 +64,7 @@ export const project = {
     request<import("@/types").Project>("/projects/setup", { method: "POST", body, token }),
   get: (token: string) =>
     request<import("@/types").Project>("/project", { token }),
-  update: (token: string, body: { project: Partial<{ name: string; slug: string; website_url: string; accent_color: string }> }) =>
+  update: (token: string, body: { project: Partial<{ name: string; slug: string; website_url: string; accent_color: string; require_approval: boolean }> }) =>
     request<import("@/types").Project>("/project", { method: "PATCH", body, token }),
   delete: (token: string) =>
     request<void>("/project", { method: "DELETE", token }),
@@ -88,6 +88,8 @@ export const adminIdeas = {
     request<import("@/types").Idea>(`/project/ideas/${id}/archive`, { method: "POST", token }),
   unarchive: (token: string, id: number) =>
     request<import("@/types").Idea>(`/project/ideas/${id}/unarchive`, { method: "POST", token }),
+  approve: (token: string, id: number) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}/approve`, { method: "POST", token }),
   delete: (token: string, id: number) =>
     request<void>(`/project/ideas/${id}`, { method: "DELETE", token }),
   vote: (token: string, id: number) =>
@@ -134,7 +136,7 @@ export const publicBoard = {
     return request<import("@/types").Idea>(`/p/${slug}/ideas/${id}${qs}`);
   },
   createIdea: (slug: string, body: { title: string; description?: string; author_name: string; author_email: string; topic_ids?: number[] }) =>
-    request<{ id: number; title: string }>(`/p/${slug}/ideas`, { method: "POST", body }),
+    request<{ id: number; title: string; pending_approval?: boolean }>(`/p/${slug}/ideas`, { method: "POST", body }),
   vote: (slug: string, ideaId: number, sessionId: string) =>
     request<{ voted: boolean; votes_count: number }>(`/p/${slug}/ideas/${ideaId}/vote`, { method: "POST", body: { session_id: sessionId } }),
   roadmap: (slug: string) => request<import("@/types").RoadmapStatus[]>(`/p/${slug}/roadmap`),

@@ -18,6 +18,7 @@ export interface Project {
   slug: string;
   website_url: string | null;
   accent_color: string;
+  require_approval: boolean;
   plan: Plan;
   ideas_count: number;
   statuses: Status[];
@@ -53,7 +54,8 @@ export interface Idea {
   comments_count: number;
   voted: boolean;
   archived?: boolean;
-  published_at: string;
+  pending?: boolean;
+  published_at: string | null;
   created_at: string;
   status: { id: number; name: string; color: string } | null;
   topics: { id: number; name: string; color: string }[];

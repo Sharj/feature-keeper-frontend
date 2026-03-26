@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-cream/70 hover:text-cream hover:bg-white/10"
+                  className="!text-cream/70 hover:!text-cream hover:!bg-white/10"
                 >
                   Settings
                 </Button>
@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-cream/70 hover:text-cream hover:bg-white/10"
+                    className="!text-cream/70 hover:!text-cream hover:!bg-white/10"
                   >
                     Public Board &#8599;
                   </Button>
@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="text-cream/70 hover:text-cream hover:bg-white/10"
+                className="!text-cream/70 hover:!text-cream hover:!bg-white/10"
               >
                 Sign out
               </Button>
