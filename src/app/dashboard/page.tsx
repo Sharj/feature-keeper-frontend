@@ -394,20 +394,15 @@ export default function DashboardPage() {
 
                 {/* Status inline select */}
                 <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <select
-                    value={idea.status?.id ?? ""}
+                  <Select
+                    options={[
+                      { value: "", label: "Status" },
+                      ...(proj?.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
+                    ]}
+                    value={String(idea.status?.id ?? "")}
                     onChange={(e) => handleStatusChange(idea.id, e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-md border border-edge bg-surface text-subtle cursor-pointer focus:border-accent focus:ring-1 focus:ring-accent/20"
-                  >
-                    <option value="" disabled>
-                      Status
-                    </option>
-                    {proj?.statuses?.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    className="!py-1.5 !pl-2.5 !pr-8 !text-xs !rounded-md sm:max-w-[140px]"
+                  />
                 </div>
               </div>
 
@@ -535,16 +530,14 @@ export default function DashboardPage() {
                       {/* Status */}
                       <div>
                         <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Status</label>
-                        <select
-                          value={idea.status?.id ?? ""}
+                        <Select
+                          options={[
+                            { value: "", label: "No status" },
+                            ...(proj?.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
+                          ]}
+                          value={String(idea.status?.id ?? "")}
                           onChange={(e) => handleStatusChange(idea.id, e.target.value)}
-                          className="w-full text-sm px-3 py-2 rounded-lg border border-edge bg-surface text-ink cursor-pointer focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                        >
-                          <option value="">No status</option>
-                          {proj?.statuses?.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
+                        />
                       </div>
 
                       {/* Topics */}
