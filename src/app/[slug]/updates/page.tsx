@@ -110,7 +110,7 @@ export default function PublicUpdatesPage() {
       </header>
 
       {/* Body */}
-      <div className="max-w-3xl mx-auto px-6 py-6">
+      <div className="max-w-4xl mx-auto px-6 py-6">
         {/* Tag filter chips */}
         {availableTags.length > 0 && (
           <div className="flex gap-2 mb-8">
