@@ -6,11 +6,12 @@ import type { User } from "@/types";
 interface AuthState {
   user: User | null;
   token: string | null;
-  hasProject: boolean;
+  hasSubscription: boolean;
+  projectCount: number;
   isLoading: boolean;
-  login: (user: User, token: string, hasProject: boolean) => void;
+  login: (user: User, token: string, hasSubscription: boolean, projectCount: number) => void;
   logout: () => void;
-  setHasProject: (val: boolean) => void;
+  setProjectCount: (n: number) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -18,41 +19,48 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [hasProject, setHasProject] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [projectCount, setProjectCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
-    const savedHasProject = localStorage.getItem("has_project");
+    const savedHasSub = localStorage.getItem("has_subscription");
+    const savedCount = localStorage.getItem("project_count");
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
-      setHasProject(savedHasProject === "true");
+      setHasSubscription(savedHasSub === "true");
+      setProjectCount(Number(savedCount) || 0);
     }
     setIsLoading(false);
   }, []);
 
-  const login = (user: User, token: string, hasProject: boolean) => {
+  const login = (user: User, token: string, hasSubscription: boolean, projectCount: number) => {
     setUser(user);
     setToken(token);
-    setHasProject(hasProject);
+    setHasSubscription(hasSubscription);
+    setProjectCount(projectCount);
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("has_project", String(hasProject));
+    localStorage.setItem("has_subscription", String(hasSubscription));
+    localStorage.setItem("project_count", String(projectCount));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    setHasProject(false);
+    setHasSubscription(false);
+    setProjectCount(0);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("has_project");
+    localStorage.removeItem("has_subscription");
+    localStorage.removeItem("project_count");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, hasProject, isLoading, login, logout, setHasProject }}>
+    <AuthContext.Provider value={{ user, token, hasSubscription, projectCount, isLoading, login, logout, setProjectCount }}>
       {children}
     </AuthContext.Provider>
   );

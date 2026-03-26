@@ -51,108 +51,125 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
 // Auth
 export const auth = {
   register: (body: { name: string; email: string; password: string }) =>
-    request<{ user: import("@/types").User; has_project: boolean }>("/users", { method: "POST", body: { user: body } }),
+    request<{ user: import("@/types").User; has_subscription: boolean; project_count: number }>("/users", { method: "POST", body: { user: body } }),
   login: (body: { email: string; password: string }) =>
-    request<{ user: import("@/types").User; has_project: boolean }>("/users/sign_in", { method: "POST", body: { user: body } }),
+    request<{ user: import("@/types").User; has_subscription: boolean; project_count: number }>("/users/sign_in", { method: "POST", body: { user: body } }),
   logout: (token: string) =>
     request<void>("/users/sign_out", { method: "DELETE", token }),
 };
 
-// Project (admin)
-export const project = {
-  setup: (token: string, body: { name: string; slug: string; website_url?: string; accent_color?: string }) =>
-    request<import("@/types").Project>("/projects/setup", { method: "POST", body, token }),
-  get: (token: string) =>
-    request<import("@/types").Project>("/project", { token }),
-  update: (token: string, body: { project: Partial<{ name: string; slug: string; website_url: string; accent_color: string; require_approval: boolean }> }) =>
-    request<import("@/types").Project>("/project", { method: "PATCH", body, token }),
-  delete: (token: string) =>
-    request<void>("/project", { method: "DELETE", token }),
+// Projects (admin)
+export const projects = {
+  get: (token: string, id: number) =>
+    request<import("@/types").Project>(`/projects/${id}`, { token }),
+  list: (token: string) =>
+    request<import("@/types").Project[]>("/projects", { token }),
+  create: (token: string, body: { name: string; slug: string; website_url?: string; accent_color?: string }) =>
+    request<import("@/types").Project>("/projects", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { project: Partial<{ name: string; slug: string; website_url: string; accent_color: string; require_approval: boolean }> }) =>
+    request<import("@/types").Project>(`/projects/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/projects/${id}`, { method: "DELETE", token }),
 };
 
 // Admin Ideas
 export const adminIdeas = {
-  list: (token: string, params?: Record<string, string>) => {
+  list: (token: string, projectId: number, params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return request<{ ideas: import("@/types").Idea[]; meta: import("@/types").PaginationMeta }>(`/project/ideas${qs}`, { token });
+    return request<{ ideas: import("@/types").Idea[]; meta: import("@/types").PaginationMeta }>(`/projects/${projectId}/ideas${qs}`, { token });
   },
-  create: (token: string, body: { title: string; description?: string; topic_ids?: number[] }) =>
-    request<import("@/types").Idea>("/project/ideas", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { title?: string; description?: string }) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}`, { method: "PATCH", body, token }),
-  updateStatus: (token: string, id: number, status_id: number) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}/status`, { method: "PATCH", body: { status_id }, token }),
-  updateTopics: (token: string, id: number, topic_ids: number[]) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}/topics`, { method: "PATCH", body: { topic_ids }, token }),
-  archive: (token: string, id: number) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}/archive`, { method: "POST", token }),
-  unarchive: (token: string, id: number) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}/unarchive`, { method: "POST", token }),
-  approve: (token: string, id: number) =>
-    request<import("@/types").Idea>(`/project/ideas/${id}/approve`, { method: "POST", token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/project/ideas/${id}`, { method: "DELETE", token }),
-  vote: (token: string, id: number) =>
-    request<{ voted: boolean; votes_count: number }>(`/project/ideas/${id}/vote`, { method: "POST", token }),
-  comments: (token: string, id: number) =>
-    request<import("@/types").Comment[]>(`/project/ideas/${id}/comments`, { token }),
-  createComment: (token: string, id: number, body: { body: string }) =>
-    request<import("@/types").Comment>(`/project/ideas/${id}/comments`, { method: "POST", body, token }),
-  deleteComment: (token: string, ideaId: number, commentId: number) =>
-    request<void>(`/project/ideas/${ideaId}/comments/${commentId}`, { method: "DELETE", token }),
+  create: (token: string, projectId: number, body: { title: string; description?: string; topic_ids?: number[] }) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas`, { method: "POST", body, token }),
+  update: (token: string, projectId: number, id: number, body: { title?: string; description?: string }) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}`, { method: "PATCH", body, token }),
+  updateStatus: (token: string, projectId: number, id: number, status_id: number) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}/status`, { method: "PATCH", body: { status_id }, token }),
+  updateTopics: (token: string, projectId: number, id: number, topic_ids: number[]) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}/topics`, { method: "PATCH", body: { topic_ids }, token }),
+  archive: (token: string, projectId: number, id: number) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}/archive`, { method: "POST", token }),
+  unarchive: (token: string, projectId: number, id: number) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}/unarchive`, { method: "POST", token }),
+  approve: (token: string, projectId: number, id: number) =>
+    request<import("@/types").Idea>(`/projects/${projectId}/ideas/${id}/approve`, { method: "POST", token }),
+  delete: (token: string, projectId: number, id: number) =>
+    request<void>(`/projects/${projectId}/ideas/${id}`, { method: "DELETE", token }),
+  vote: (token: string, projectId: number, id: number) =>
+    request<{ voted: boolean; votes_count: number }>(`/projects/${projectId}/ideas/${id}/vote`, { method: "POST", token }),
+  comments: (token: string, projectId: number, id: number) =>
+    request<import("@/types").Comment[]>(`/projects/${projectId}/ideas/${id}/comments`, { token }),
+  createComment: (token: string, projectId: number, id: number, body: { body: string }) =>
+    request<import("@/types").Comment>(`/projects/${projectId}/ideas/${id}/comments`, { method: "POST", body, token }),
+  deleteComment: (token: string, projectId: number, ideaId: number, commentId: number) =>
+    request<void>(`/projects/${projectId}/ideas/${ideaId}/comments/${commentId}`, { method: "DELETE", token }),
 };
 
 // Admin Statuses
 export const statuses = {
-  list: (token: string) => request<import("@/types").Status[]>("/project/statuses", { token }),
-  create: (token: string, body: { status: { name: string; color: string; position?: number; is_default?: boolean } }) =>
-    request<import("@/types").Status>("/project/statuses", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { status: Partial<{ name: string; color: string; position: number; is_default: boolean }> }) =>
-    request<import("@/types").Status>(`/project/statuses/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/project/statuses/${id}`, { method: "DELETE", token }),
+  list: (token: string, projectId: number) => request<import("@/types").Status[]>(`/projects/${projectId}/statuses`, { token }),
+  create: (token: string, projectId: number, body: { status: { name: string; color: string; position?: number; is_default?: boolean } }) =>
+    request<import("@/types").Status>(`/projects/${projectId}/statuses`, { method: "POST", body, token }),
+  update: (token: string, projectId: number, id: number, body: { status: Partial<{ name: string; color: string; position: number; is_default: boolean }> }) =>
+    request<import("@/types").Status>(`/projects/${projectId}/statuses/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, projectId: number, id: number) =>
+    request<void>(`/projects/${projectId}/statuses/${id}`, { method: "DELETE", token }),
 };
 
 // Admin Topics
 export const topics = {
-  list: (token: string) => request<import("@/types").Topic[]>("/project/topics", { token }),
-  create: (token: string, body: { topic: { name: string; color: string; position?: number } }) =>
-    request<import("@/types").Topic>("/project/topics", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { topic: Partial<{ name: string; color: string; position: number }> }) =>
-    request<import("@/types").Topic>(`/project/topics/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/project/topics/${id}`, { method: "DELETE", token }),
+  list: (token: string, projectId: number) => request<import("@/types").Topic[]>(`/projects/${projectId}/topics`, { token }),
+  create: (token: string, projectId: number, body: { topic: { name: string; color: string; position?: number } }) =>
+    request<import("@/types").Topic>(`/projects/${projectId}/topics`, { method: "POST", body, token }),
+  update: (token: string, projectId: number, id: number, body: { topic: Partial<{ name: string; color: string; position: number }> }) =>
+    request<import("@/types").Topic>(`/projects/${projectId}/topics/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, projectId: number, id: number) =>
+    request<void>(`/projects/${projectId}/topics/${id}`, { method: "DELETE", token }),
 };
 
 // Admin Update Tags
 export const updateTags = {
-  list: (token: string) => request<import("@/types").UpdateTag[]>("/project/update_tags", { token }),
-  create: (token: string, body: { update_tag: { name: string; color: string; position?: number } }) =>
-    request<import("@/types").UpdateTag>("/project/update_tags", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { update_tag: Partial<{ name: string; color: string; position: number }> }) =>
-    request<import("@/types").UpdateTag>(`/project/update_tags/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/project/update_tags/${id}`, { method: "DELETE", token }),
+  list: (token: string, projectId: number) => request<import("@/types").UpdateTag[]>(`/projects/${projectId}/update_tags`, { token }),
+  create: (token: string, projectId: number, body: { update_tag: { name: string; color: string; position?: number } }) =>
+    request<import("@/types").UpdateTag>(`/projects/${projectId}/update_tags`, { method: "POST", body, token }),
+  update: (token: string, projectId: number, id: number, body: { update_tag: Partial<{ name: string; color: string; position: number }> }) =>
+    request<import("@/types").UpdateTag>(`/projects/${projectId}/update_tags/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, projectId: number, id: number) =>
+    request<void>(`/projects/${projectId}/update_tags/${id}`, { method: "DELETE", token }),
 };
 
 // Admin Updates
 export const adminUpdates = {
-  list: (token: string, params?: Record<string, string>) => {
+  list: (token: string, projectId: number, params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return request<{ updates: import("@/types").UpdateEntry[]; meta: import("@/types").PaginationMeta }>(`/project/updates${qs}`, { token });
+    return request<{ updates: import("@/types").UpdateEntry[]; meta: import("@/types").PaginationMeta }>(`/projects/${projectId}/updates${qs}`, { token });
   },
-  get: (token: string, id: number) =>
-    request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { token }),
-  create: (token: string, body: { title: string; body: string; update_tag_id?: number; cover_image_url?: string; published_at?: string; idea_ids?: number[] }) =>
-    request<import("@/types").UpdateEntry>("/project/updates", { method: "POST", body, token }),
-  update: (token: string, id: number, body: { title?: string; body?: string; update_tag_id?: number | null; cover_image_url?: string; published_at?: string | null; idea_ids?: number[] }) =>
-    request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/project/updates/${id}`, { method: "DELETE", token }),
-  publish: (token: string, id: number) =>
-    request<import("@/types").UpdateEntry>(`/project/updates/${id}/publish`, { method: "POST", token }),
-  unpublish: (token: string, id: number) =>
-    request<import("@/types").UpdateEntry>(`/project/updates/${id}/unpublish`, { method: "POST", token }),
+  get: (token: string, projectId: number, id: number) =>
+    request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates/${id}`, { token }),
+  create: (token: string, projectId: number, body: { title: string; body: string; update_tag_id?: number; cover_image_url?: string; published_at?: string; idea_ids?: number[] }) =>
+    request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates`, { method: "POST", body, token }),
+  update: (token: string, projectId: number, id: number, body: { title?: string; body?: string; update_tag_id?: number | null; cover_image_url?: string; published_at?: string | null; idea_ids?: number[] }) =>
+    request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, projectId: number, id: number) =>
+    request<void>(`/projects/${projectId}/updates/${id}`, { method: "DELETE", token }),
+  publish: (token: string, projectId: number, id: number) =>
+    request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates/${id}/publish`, { method: "POST", token }),
+  unpublish: (token: string, projectId: number, id: number) =>
+    request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates/${id}/unpublish`, { method: "POST", token }),
+};
+
+// Subscription
+export const subscription = {
+  get: (token: string) => request<import("@/types").Subscription>("/subscription", { token }),
+  transfer: (token: string, body: { email: string }) =>
+    request<{ message: string }>("/subscription/transfer", { method: "POST", body, token }),
+};
+
+// Account
+export const account = {
+  get: (token: string) => request<{ id: number; name: string; email: string; created_at: string }>("/account", { token }),
+  update: (token: string, body: { name?: string; email?: string }) =>
+    request<{ id: number; name: string; email: string }>("/account", { method: "PATCH", body, token }),
+  delete: (token: string) => request<void>("/account", { method: "DELETE", token }),
 };
 
 // Public board

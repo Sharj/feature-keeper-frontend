@@ -12,6 +12,15 @@ export interface Plan {
   max_seats: number;
 }
 
+export interface Subscription {
+  id: number;
+  plan: Plan;
+  projects_count: number;
+  projects_remaining: number | null;
+  owner: { id: number; name: string; email: string };
+  created_at: string;
+}
+
 export interface Project {
   id: number;
   name: string;
