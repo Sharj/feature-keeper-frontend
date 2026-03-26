@@ -48,6 +48,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard" className="text-lg font-serif text-cream">
               Feature Keeper
             </Link>
+            <div className="flex items-center gap-1 ml-6">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="!text-cream/70 hover:!text-cream hover:!bg-white/10">
+                  Ideas
+                </Button>
+              </Link>
+              <Link href="/dashboard/updates">
+                <Button variant="ghost" size="sm" className="!text-cream/70 hover:!text-cream hover:!bg-white/10">
+                  Updates
+                </Button>
+              </Link>
+            </div>
             <div className="flex items-center gap-3">
               <Link href="/dashboard/settings">
                 <Button

@@ -124,6 +124,26 @@ export const topics = {
     request<void>(`/project/topics/${id}`, { method: "DELETE", token }),
 };
 
+// Admin Updates
+export const adminUpdates = {
+  list: (token: string, params?: Record<string, string>) => {
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ updates: import("@/types").UpdateEntry[]; meta: import("@/types").PaginationMeta }>(`/project/updates${qs}`, { token });
+  },
+  get: (token: string, id: number) =>
+    request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { token }),
+  create: (token: string, body: { title: string; body: string; label: string; cover_image_url?: string; published_at?: string; idea_ids?: number[] }) =>
+    request<import("@/types").UpdateEntry>("/project/updates", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { title?: string; body?: string; label?: string; cover_image_url?: string; published_at?: string | null; idea_ids?: number[] }) =>
+    request<import("@/types").UpdateEntry>(`/project/updates/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/project/updates/${id}`, { method: "DELETE", token }),
+  publish: (token: string, id: number) =>
+    request<import("@/types").UpdateEntry>(`/project/updates/${id}/publish`, { method: "POST", token }),
+  unpublish: (token: string, id: number) =>
+    request<import("@/types").UpdateEntry>(`/project/updates/${id}/unpublish`, { method: "POST", token }),
+};
+
 // Public board
 export const publicBoard = {
   get: (slug: string) => request<import("@/types").PublicBoard>(`/p/${slug}`),
@@ -139,6 +159,12 @@ export const publicBoard = {
     request<{ id: number; title: string; pending_approval?: boolean }>(`/p/${slug}/ideas`, { method: "POST", body }),
   vote: (slug: string, ideaId: number, sessionId: string) =>
     request<{ voted: boolean; votes_count: number }>(`/p/${slug}/ideas/${ideaId}/vote`, { method: "POST", body: { session_id: sessionId } }),
+  updates: (slug: string, params?: Record<string, string>) => {
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ updates: import("@/types").UpdateEntry[]; meta: import("@/types").PaginationMeta }>(`/p/${slug}/updates${qs}`);
+  },
+  getUpdate: (slug: string, id: number) =>
+    request<import("@/types").UpdateEntry>(`/p/${slug}/updates/${id}`),
   roadmap: (slug: string) => request<import("@/types").RoadmapStatus[]>(`/p/${slug}/roadmap`),
   comments: (slug: string, ideaId: number) =>
     request<import("@/types").Comment[]>(`/p/${slug}/ideas/${ideaId}/comments`),

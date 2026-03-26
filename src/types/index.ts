@@ -59,6 +59,7 @@ export interface Idea {
   created_at: string;
   status: { id: number; name: string; color: string } | null;
   topics: { id: number; name: string; color: string }[];
+  updates?: { id: number; title: string }[];
 }
 
 export interface Comment {
@@ -96,4 +97,17 @@ export interface RoadmapStatus {
     comments_count: number;
     topics: { id: number; name: string; color: string }[];
   }[];
+}
+
+export interface UpdateEntry {
+  id: number;
+  title: string;
+  body?: string;
+  label: "new" | "improved" | "fixed";
+  cover_image_url?: string | null;
+  published: boolean;
+  published_at: string | null;
+  created_at: string;
+  ideas_count?: number;
+  ideas?: { id: number; title: string; votes_count: number }[];
 }
