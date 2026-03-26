@@ -23,7 +23,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [viewFilter, setViewFilter] = useState<"all" | "pending">("all");
+  const [sortBy, setSortBy] = useState("");
+  const [viewFilter, setViewFilter] = useState<"all" | "pending" | "archived">("all");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, Comment[]>>({});
@@ -44,7 +45,9 @@ export default function DashboardPage() {
       const params: Record<string, string> = { page: String(page) };
       if (search) params.q = search;
       if (statusFilter) params.status_id = statusFilter;
+      if (sortBy) params.sort = sortBy;
       if (viewFilter === "pending") params.pending = "true";
+      if (viewFilter === "archived") params.archived = "true";
       const res = await adminIdeas.list(token, params);
       setIdeas(res.data.ideas);
       setMeta(res.data.meta);
@@ -53,7 +56,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, search, statusFilter, viewFilter]);
+  }, [token, page, search, statusFilter, sortBy, viewFilter]);
 
   useEffect(() => {
     if (token) {
@@ -235,26 +238,19 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-serif text-ink">Ideas</h1>
           <Badge className="bg-accent-soft text-accent">{ideaCountLabel}</Badge>
-          {proj?.require_approval && (
-            <div className="flex items-center gap-1 ml-2 bg-cream rounded-lg p-0.5">
+          <div className="flex items-center gap-1 ml-2 bg-cream rounded-lg p-0.5">
+            {(["all", ...(proj?.require_approval ? ["pending"] : []), "archived"] as const).map((f) => (
               <button
-                onClick={() => { setViewFilter("all"); setPage(1); }}
-                className={`px-3 py-1 text-sm rounded-md transition-colors cursor-pointer ${
-                  viewFilter === "all" ? "bg-surface text-ink shadow-xs font-medium" : "text-muted hover:text-subtle"
+                key={f}
+                onClick={() => { setViewFilter(f as typeof viewFilter); setPage(1); }}
+                className={`px-3 py-1 text-sm rounded-md transition-colors cursor-pointer capitalize ${
+                  viewFilter === f ? "bg-surface text-ink shadow-xs font-medium" : "text-muted hover:text-subtle"
                 }`}
               >
-                All
+                {f}
               </button>
-              <button
-                onClick={() => { setViewFilter("pending"); setPage(1); }}
-                className={`px-3 py-1 text-sm rounded-md transition-colors cursor-pointer ${
-                  viewFilter === "pending" ? "bg-surface text-ink shadow-xs font-medium" : "text-muted hover:text-subtle"
-                }`}
-              >
-                Pending
-              </button>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
         <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end">
           <Input
@@ -280,6 +276,19 @@ export default function DashboardPage() {
               setPage(1);
             }}
             className="sm:max-w-[180px]"
+          />
+          <Select
+            options={[
+              { value: "", label: "Latest" },
+              { value: "votes", label: "Most voted" },
+              { value: "oldest", label: "Oldest" },
+            ]}
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setPage(1);
+            }}
+            className="sm:max-w-[150px]"
           />
           <Button onClick={() => setShowAddModal(true)} disabled={atLimit}>
             + Add Idea
