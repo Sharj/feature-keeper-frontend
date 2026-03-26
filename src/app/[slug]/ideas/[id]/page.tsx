@@ -212,6 +212,25 @@ export default function PublicIdeaDetailPage() {
         </div>
       </div>
 
+      {/* Shipped banner */}
+      {idea.updates && idea.updates.length > 0 && (
+        <div className="bg-positive-soft border border-positive/20 rounded-lg px-4 py-3 text-sm flex items-center gap-2 mt-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-positive shrink-0">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          <span>
+            <span className="text-positive font-medium">Shipped!</span>
+            {" "}This idea was addressed in{" "}
+            {idea.updates.map((u, i) => (
+              <span key={u.id}>
+                {i > 0 && ", "}
+                <Link href={`/${slug}/updates/${u.id}`} className="text-positive underline font-medium">{u.title}</Link>
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
+
       {/* Description */}
       {idea.description && (
         <div className="mt-6 text-subtle whitespace-pre-wrap leading-relaxed">

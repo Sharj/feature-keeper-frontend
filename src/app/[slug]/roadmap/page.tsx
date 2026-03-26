@@ -62,6 +62,12 @@ export default function PublicRoadmapPage() {
             >
               Roadmap
             </Link>
+            <Link
+              href={`/${slug}/updates`}
+              className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
+            >
+              Updates
+            </Link>
           </nav>
         </div>
       </header>
