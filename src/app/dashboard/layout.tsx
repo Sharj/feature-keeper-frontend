@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream flex flex-col">
       <nav className="sticky top-0 z-40 bg-nav">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex justify-between h-14 items-center">
@@ -98,7 +98,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </nav>
-      <main className="max-w-5xl mx-auto px-6 py-8">{children}</main>
+      <main className="max-w-5xl mx-auto px-6 py-8 flex-1">{children}</main>
+
+      {/* Footer */}
+      <footer className="border-t border-edge mt-auto">
+        <div className="max-w-5xl mx-auto px-6 py-5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-serif text-muted">Feature Keeper</span>
+              {proj?.plan && (
+                <span className="text-xs text-faint bg-cream px-2 py-0.5 rounded-full">
+                  {proj.plan.name} plan
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-5 text-xs text-muted">
+              <a href="mailto:support@featurekeeper.com" className="hover:text-subtle transition-colors">Support</a>
+              <span className="text-faint">|</span>
+              <span>&copy; {new Date().getFullYear()} Feature Keeper</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
