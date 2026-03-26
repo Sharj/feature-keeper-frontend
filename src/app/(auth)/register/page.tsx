@@ -23,8 +23,8 @@ export default function RegisterPage() {
     try {
       const res = await auth.register({ name, email, password });
       if (res.token) {
-        login(res.data.user, res.token);
-        router.push("/dashboard");
+        login(res.data.user, res.token, false);
+        router.push("/onboarding");
       } else {
         setError("No token received from server.");
       }
@@ -38,7 +38,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Brand */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
@@ -52,7 +51,6 @@ export default function RegisterPage() {
           <p className="mt-2 text-subtle text-sm">Get started with Feature Keeper for free</p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 p-3 bg-critical-soft text-critical rounded-lg text-sm flex items-center gap-2">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -62,7 +60,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Form Card */}
         <Card variant="elevated" padding="lg">
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
@@ -94,12 +91,7 @@ export default function RegisterPage() {
               placeholder="At least 6 characters"
               hint="Must be at least 6 characters"
             />
-            <Button
-              type="submit"
-              loading={loading}
-              fullWidth
-              size="lg"
-            >
+            <Button type="submit" loading={loading} fullWidth size="lg">
               {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
@@ -107,7 +99,9 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-subtle">
           Already have an account?{" "}
-          <Link href="/login" className="text-accent font-medium hover:text-accent-bold transition">Sign in</Link>
+          <Link href="/login" className="text-accent font-medium hover:text-accent-bold transition">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>

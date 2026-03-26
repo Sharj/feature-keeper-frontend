@@ -22,8 +22,12 @@ export default function LoginPage() {
     try {
       const res = await auth.login({ email, password });
       if (res.token) {
-        login(res.data.user, res.token);
-        router.push("/dashboard");
+        login(res.data.user, res.token, res.data.has_project);
+        if (res.data.has_project) {
+          router.push("/dashboard");
+        } else {
+          router.push("/onboarding");
+        }
       } else {
         setError("No token received from server.");
       }
@@ -37,7 +41,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Brand */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
@@ -51,7 +54,6 @@ export default function LoginPage() {
           <p className="mt-2 text-subtle text-sm">Sign in to your account to continue</p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 p-3 bg-critical-soft text-critical rounded-lg text-sm flex items-center gap-2">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -61,7 +63,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Form Card */}
         <Card variant="elevated" padding="lg">
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
@@ -82,12 +83,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
             />
-            <Button
-              type="submit"
-              loading={loading}
-              fullWidth
-              size="lg"
-            >
+            <Button type="submit" loading={loading} fullWidth size="lg">
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
@@ -95,7 +91,9 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-subtle">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-accent font-medium hover:text-accent-bold transition">Register</Link>
+          <Link href="/register" className="text-accent font-medium hover:text-accent-bold transition">
+            Register
+          </Link>
         </p>
       </div>
     </div>
