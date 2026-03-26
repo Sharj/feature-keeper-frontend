@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <nav className="sticky top-0 z-40 bg-nav">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="flex justify-between h-14 items-center">
             <Link href="/dashboard" className="text-lg font-serif text-cream">
               Feature Keeper
