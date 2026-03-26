@@ -98,11 +98,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </nav>
-      <main className="max-w-5xl mx-auto px-6 py-8 flex-1">{children}</main>
+      <main className="max-w-6xl mx-auto px-6 py-8 flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-edge mt-auto">
-        <div className="max-w-5xl mx-auto px-6 py-5">
+        <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-4">
               <span className="text-sm font-serif text-muted">Feature Keeper</span>
