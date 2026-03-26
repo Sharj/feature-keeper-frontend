@@ -413,107 +413,234 @@ export default function DashboardPage() {
 
               {/* Expanded detail */}
               {expandedId === idea.id && (
-                <div className="border-t border-edge px-4 py-4 bg-cream/50 animate-slide-up">
-                  {idea.description && (
-                    <p className="text-sm text-ink whitespace-pre-wrap mb-4">
-                      {idea.description}
-                    </p>
-                  )}
+                <div className="border-t border-edge animate-slide-up">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px]">
+                    {/* Left: Content + Comments */}
+                    <div className="p-5 space-y-5">
+                      {/* Description */}
+                      {idea.description && (
+                        <div className="prose-sm">
+                          <p className="text-sm text-ink leading-relaxed whitespace-pre-wrap">{idea.description}</p>
+                        </div>
+                      )}
 
-                  <div className="flex items-center gap-2 mb-4">
-                    {idea.pending && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleApprove(idea.id)}
-                      >
-                        Approve
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleArchive(idea.id)}
-                    >
-                      {idea.archived ? "Unarchive" : "Archive"}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleDeleteIdea(idea.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
+                      {/* Meta */}
+                      <div className="flex items-center gap-4 text-xs text-muted">
+                        <span>by <span className="text-subtle font-medium">{idea.author_name}</span></span>
+                        {idea.author_email && <span>{idea.author_email}</span>}
+                        <span>{new Date(idea.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                        <span className="capitalize">{idea.source}</span>
+                      </div>
 
-                  {/* Comments */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-ink">
-                      Comments ({idea.comments_count})
-                    </h4>
-                    {commentLoading === idea.id ? (
-                      <p className="text-xs text-muted">Loading comments...</p>
-                    ) : (
-                      <>
-                        {(comments[idea.id] || []).length === 0 && (
-                          <p className="text-xs text-muted">No comments yet.</p>
+                      {/* Divider */}
+                      <div className="border-t border-edge" />
+
+                      {/* Comments */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          </svg>
+                          <h4 className="text-sm font-semibold text-ink">
+                            Comments
+                          </h4>
+                          <span className="text-xs text-muted bg-cream px-1.5 py-0.5 rounded-full">{idea.comments_count}</span>
+                        </div>
+
+                        {commentLoading === idea.id ? (
+                          <div className="flex items-center gap-2 py-4">
+                            <div className="w-4 h-4 border-2 border-edge border-t-accent rounded-full animate-spin" />
+                            <span className="text-xs text-muted">Loading comments...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {(comments[idea.id] || []).length === 0 && (
+                              <p className="text-sm text-muted py-2">No comments yet. Be the first to reply.</p>
+                            )}
+                            {(comments[idea.id] || []).map((c, ci) => (
+                              <div
+                                key={c.id}
+                                className={`group relative rounded-xl text-sm transition-all ${
+                                  c.is_official
+                                    ? "bg-accent-soft/40 border border-accent/10 pl-4 before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-full before:bg-accent"
+                                    : "bg-cream/60 border border-edge pl-4"
+                                }`}
+                                style={{ animationDelay: `${ci * 40}ms`, animationFillMode: "both" }}
+                              >
+                                <div className="p-3 pl-2">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                                        style={{ backgroundColor: c.is_official ? "#c2410c" : "#9c968f" }}>
+                                        {c.author.name.charAt(0).toUpperCase()}
+                                      </span>
+                                      <span className="font-semibold text-ink text-xs">{c.author.name}</span>
+                                      {c.is_official && (
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent-soft px-1.5 py-0.5 rounded">Team</span>
+                                      )}
+                                      <span className="text-[11px] text-faint">
+                                        {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() => handleDeleteComment(idea.id, c.id)}
+                                      className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted hover:text-critical hover:bg-critical-soft transition-all cursor-pointer"
+                                      title="Delete comment"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                  <p className="text-subtle leading-relaxed whitespace-pre-wrap">{c.body}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                        {(comments[idea.id] || []).map((c) => (
-                          <div
-                            key={c.id}
-                            className={`p-3 rounded-lg text-sm ${
-                              c.is_official
-                                ? "bg-inform-soft border border-inform/20"
-                                : "bg-surface border border-edge"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-ink text-xs">
-                                {c.author.name}
-                                {c.author.is_admin && (
-                                  <Badge variant="info" size="sm" className="ml-1.5">
-                                    Admin
-                                  </Badge>
-                                )}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted">
-                                  {new Date(c.created_at).toLocaleDateString()}
-                                </span>
-                                <button
-                                  onClick={() => handleDeleteComment(idea.id, c.id)}
-                                  className="text-xs text-muted hover:text-critical cursor-pointer"
-                                  title="Delete comment"
+
+                        {/* Reply form */}
+                        <div className="mt-4 relative">
+                          <div className="flex items-start gap-3">
+                            <span className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-2">
+                              You
+                            </span>
+                            <div className="flex-1 space-y-2">
+                              <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="Write an official reply..."
+                                rows={3}
+                                className="w-full px-3.5 py-2.5 text-sm text-ink bg-surface border border-edge rounded-xl placeholder:text-muted transition-colors duration-150 focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none"
+                              />
+                              <div className="flex justify-between items-center">
+                                <span className="text-[11px] text-faint">Replies are marked as official team responses</span>
+                                <Button
+                                  size="sm"
+                                  loading={replyLoading}
+                                  onClick={() => handleReply(idea.id)}
+                                  disabled={!replyText.trim()}
                                 >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 6 6 18M6 6l12 12" />
-                                  </svg>
-                                </button>
+                                  {replyLoading ? "Sending..." : "Reply as Team"}
+                                </Button>
                               </div>
                             </div>
-                            <p className="text-subtle whitespace-pre-wrap">{c.body}</p>
                           </div>
-                        ))}
-                      </>
-                    )}
+                        </div>
+                      </div>
+                    </div>
 
-                    {/* Reply form */}
-                    <div className="flex gap-2">
-                      <Textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Write an admin reply..."
-                        rows={2}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        loading={replyLoading}
-                        onClick={() => handleReply(idea.id)}
-                        disabled={!replyText.trim()}
-                        className="self-end"
-                      >
-                        Reply
-                      </Button>
+                    {/* Right: Actions Sidebar */}
+                    <div className="border-t lg:border-t-0 lg:border-l border-edge p-5 bg-cream/30 space-y-5">
+                      {/* Status */}
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Status</label>
+                        <select
+                          value={idea.status?.id ?? ""}
+                          onChange={(e) => handleStatusChange(idea.id, e.target.value)}
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-edge bg-surface text-ink cursor-pointer focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                        >
+                          <option value="">No status</option>
+                          {proj?.statuses?.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Topics */}
+                      {proj?.topics && proj.topics.length > 0 && (
+                        <div>
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Topics</label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {proj.topics.map((t) => {
+                              const isActive = idea.topics.some((it) => it.id === t.id);
+                              return (
+                                <button
+                                  key={t.id}
+                                  onClick={() => {
+                                    const newIds = isActive
+                                      ? idea.topics.filter((it) => it.id !== t.id).map((it) => it.id)
+                                      : [...idea.topics.map((it) => it.id), t.id];
+                                    if (token) {
+                                      adminIdeas.updateTopics(token, idea.id, newIds).then((res) => {
+                                        setIdeas((prev) => prev.map((i) => (i.id === idea.id ? res.data : i)));
+                                      });
+                                    }
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                                    isActive
+                                      ? "ring-1 ring-offset-1 shadow-sm"
+                                      : "opacity-50 hover:opacity-80"
+                                  }`}
+                                  style={{
+                                    backgroundColor: `${t.color}18`,
+                                    color: t.color,
+                                    ...(isActive ? { ringColor: t.color } : {}),
+                                  }}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                                  {t.name}
+                                  {isActive && (
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <path d="M18 6 6 18M6 6l12 12" />
+                                    </svg>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Votes */}
+                      <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Votes</label>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-bold text-ink">{idea.votes_count}</span>
+                          <span className="text-xs text-muted">upvotes</span>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t border-edge" />
+
+                      {/* Actions */}
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Actions</label>
+
+                        {idea.pending && (
+                          <button
+                            onClick={() => handleApprove(idea.id)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium bg-positive-soft text-positive hover:bg-positive/10 transition-colors cursor-pointer"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            Approve &amp; Publish
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleArchive(idea.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-subtle hover:bg-cream hover:text-ink transition-colors cursor-pointer"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="20" height="5" x="2" y="3" rx="1" />
+                            <path d="M4 8v11a2 2 0 002 2h12a2 2 0 002-2V8M10 12h4" />
+                          </svg>
+                          {idea.archived ? "Unarchive" : "Archive"}
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteIdea(idea.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted hover:bg-critical-soft hover:text-critical transition-colors cursor-pointer"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                          </svg>
+                          Delete permanently
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
