@@ -5,6 +5,15 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { organizations, ApiError } from "@/lib/api";
 import type { Organization } from "@/types";
+import {
+  Button,
+  Input,
+  Card,
+  Badge,
+  Modal,
+  PageHeader,
+  EmptyState,
+} from "@/components/ui";
 
 export default function DashboardPage() {
   const { token } = useAuth();
@@ -18,10 +27,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!token) return;
-    organizations.list(token).then((res) => {
-      setOrgs(Array.isArray(res.data) ? res.data : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    organizations
+      .list(token)
+      .then((res) => {
+        setOrgs(Array.isArray(res.data) ? res.data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [token]);
 
   async function handleCreate(e: FormEvent) {
@@ -31,92 +43,149 @@ export default function DashboardPage() {
     setError("");
     try {
       const res = await organizations.create(token, {
-        organization: { name: newName, slug: newSlug || newName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") },
+        organization: {
+          name: newName,
+          slug:
+            newSlug ||
+            newName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, ""),
+        },
       });
       setOrgs((prev) => [...prev, res.data]);
       setShowCreate(false);
       setNewName("");
       setNewSlug("");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create organization");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to create organization"
+      );
     } finally {
       setCreating(false);
     }
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Organizations</h1>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
-        >
-          New Organization
-        </button>
-      </div>
+    <div className="animate-fade-in">
+      <PageHeader
+        title="Your Organizations"
+        description="Manage your organizations and their settings."
+        actions={
+          <Button onClick={() => setShowCreate(true)}>
+            New Organization
+          </Button>
+        }
+      />
 
-      {showCreate && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 bg-white rounded-xl border border-gray-200 space-y-3">
-          {error && <div className="p-2 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                required
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Acme Corp"
-              />
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Create Organization"
+        description="Set up a new organization to manage your feature boards."
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          {error && (
+            <div className="p-3 bg-critical-soft text-critical rounded-lg text-sm">
+              {error}
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Slug</label>
-              <input
-                value={newSlug}
-                onChange={(e) => setNewSlug(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="acme-corp (auto-generated)"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={creating} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+          )}
+          <Input
+            label="Name"
+            required
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Acme Corp"
+          />
+          <Input
+            label="Slug"
+            value={newSlug}
+            onChange={(e) => setNewSlug(e.target.value)}
+            placeholder="acme-corp (auto-generated)"
+            hint="Leave blank to auto-generate from the name."
+          />
+          <div className="flex gap-3 pt-2">
+            <Button type="submit" loading={creating}>
               {creating ? "Creating..." : "Create"}
-            </button>
-            <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-gray-600 text-sm">
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowCreate(false)}
+            >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
-      )}
+      </Modal>
 
-      {loading ? (
-        <p className="text-gray-500">Loading organizations...</p>
-      ) : orgs.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <p className="text-gray-500 mb-2">No organizations yet.</p>
-          <p className="text-sm text-gray-400">Create one to get started.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {orgs.map((org) => (
-            <Link
-              key={org.id}
-              href={`/dashboard/${org.id}`}
-              className="block p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition"
-            >
-              <h2 className="font-semibold text-lg">{org.name}</h2>
-              <p className="text-sm text-gray-500 mt-1">/{org.slug}</p>
-              {org.plan && (
-                <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full">
-                  {org.plan.name}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="mt-8">
+        {loading ? (
+          <p className="text-muted">Loading organizations...</p>
+        ) : orgs.length === 0 ? (
+          <Card>
+            <EmptyState
+              title="No organizations yet"
+              description="Create one to get started managing your feature boards."
+              icon={
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 21H6a2 2 0 0 1-2-2V7l5-5h9a2 2 0 0 1 2 2v15a2 2 0 0 1-2 2Z" />
+                  <path d="M9 2v5H4" />
+                  <path d="M12 11v6" />
+                  <path d="M9 14h6" />
+                </svg>
+              }
+              action={
+                <Button onClick={() => setShowCreate(true)}>
+                  Create Organization
+                </Button>
+              }
+            />
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {orgs.map((org) => (
+              <Link
+                key={org.id}
+                href={`/dashboard/${org.id}`}
+                className="block"
+              >
+                <Card variant="interactive" padding="lg">
+                  <h2 className="font-serif text-lg text-ink">{org.name}</h2>
+                  <p className="text-sm text-muted mt-1">/{org.slug}</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    {org.plan && (
+                      <Badge variant="info">{org.plan.name}</Badge>
+                    )}
+                    {org.created_at && (
+                      <span className="text-xs text-faint">
+                        Created{" "}
+                        {new Date(org.created_at).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          }
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,28 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { Card } from "@/components/ui";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-cream">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+      <nav className="fixed top-0 w-full bg-nav/95 backdrop-blur-md z-50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900">Feature Keeper</span>
+            <span className="text-lg font-semibold text-white font-serif">Feature Keeper</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition px-4 py-2">
+            <Link href="/login" className="text-sm font-medium text-white/70 hover:text-white transition px-4 py-2">
               Sign in
             </Link>
             <Link
               href="/register"
-              className="text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm"
+              className="text-sm font-medium bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-bold transition shadow-sm"
             >
               Get started free
             </Link>
@@ -30,54 +31,54 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium mb-6">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+      {/* Hero — dark bg */}
+      <section className="bg-nav pt-32 pb-24 px-6">
+        <div className="max-w-4xl mx-auto text-center animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/80 text-sm font-medium mb-8">
+            <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
             Now in public beta
           </div>
-          <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
-            Turn user feedback into<br />
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif text-white tracking-tight leading-[1.1]">
+            Turn user feedback into{" "}
+            <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400 bg-clip-text text-transparent">
               your product roadmap
             </span>
           </h1>
-          <p className="mt-6 text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-lg sm:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: "150ms" }}>
             Give your users a voice. Collect feature requests, let them vote on what matters most, and keep everyone in the loop as you ship.
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "300ms" }}>
             <Link
               href="/register"
-              className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
+              className="w-full sm:w-auto px-8 py-3.5 bg-accent text-white rounded-xl font-semibold text-base hover:bg-accent-bold transition shadow-lg shadow-orange-900/30 hover:shadow-orange-900/50"
             >
               Start collecting feedback
             </Link>
             <Link
               href="/login"
-              className="w-full sm:w-auto px-8 py-3.5 bg-white text-gray-700 rounded-xl font-semibold text-base border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition"
+              className="w-full sm:w-auto px-8 py-3.5 bg-white/10 text-white rounded-xl font-semibold text-base border border-white/15 hover:bg-white/15 transition"
             >
               Sign in to dashboard
             </Link>
           </div>
-          <p className="mt-4 text-sm text-gray-400">Free to start. No credit card required.</p>
+          <p className="mt-4 text-sm text-white/40 animate-fade-in" style={{ animationDelay: "400ms" }}>Free to start. No credit card required.</p>
         </div>
       </section>
 
       {/* Board Preview */}
-      <section className="px-6 pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-gray-950 rounded-2xl p-1.5 shadow-2xl shadow-gray-300/50">
-            <div className="bg-white rounded-xl overflow-hidden">
+      <section className="px-6 -mt-12 pb-20 relative z-10">
+        <div className="max-w-5xl mx-auto animate-slide-up" style={{ animationDelay: "200ms" }}>
+          <div className="bg-nav rounded-2xl p-1.5 shadow-2xl shadow-black/20">
+            <div className="bg-surface rounded-xl overflow-hidden">
               {/* Fake browser chrome */}
-              <div className="bg-gray-50 border-b border-gray-200 px-4 py-2.5 flex items-center gap-2">
+              <div className="bg-cream border-b border-edge px-4 py-2.5 flex items-center gap-2">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-amber-400" />
                   <div className="w-3 h-3 rounded-full bg-green-400" />
                 </div>
                 <div className="flex-1 flex justify-center">
-                  <div className="bg-white border border-gray-200 rounded-md px-4 py-1 text-xs text-gray-400 w-72 text-center">
+                  <div className="bg-surface border border-edge rounded-md px-4 py-1 text-xs text-muted w-72 text-center">
                     yourapp.featurekeeper.io/board
                   </div>
                 </div>
@@ -86,10 +87,10 @@ export default function HomePage() {
               <div className="p-6 space-y-3">
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <div className="h-5 w-40 bg-gray-900 rounded" />
-                    <div className="h-3 w-64 bg-gray-200 rounded mt-2" />
+                    <div className="h-5 w-40 bg-ink rounded" />
+                    <div className="h-3 w-64 bg-edge rounded mt-2" />
                   </div>
-                  <div className="h-9 w-28 bg-indigo-600 rounded-lg" />
+                  <div className="h-9 w-28 bg-accent rounded-lg" />
                 </div>
                 {[
                   { title: "Dark mode support", votes: 47, status: "Planned", statusColor: "#8b5cf6", category: "UI/UX" },
@@ -97,16 +98,16 @@ export default function HomePage() {
                   { title: "Slack integration", votes: 28, status: "In Progress", statusColor: "#3b82f6", category: "Integrations" },
                   { title: "Custom email templates", votes: 19, status: "Open", statusColor: "#6b7280", category: "Email" },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition">
-                    <div className="flex flex-col items-center justify-center w-12 py-1.5 rounded-lg bg-gray-50 border border-gray-200">
-                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-                      <span className="text-sm font-bold text-gray-700">{item.votes}</span>
+                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-edge hover:border-edge-strong transition">
+                    <div className="flex flex-col items-center justify-center w-12 py-1.5 rounded-lg bg-cream border border-edge">
+                      <svg className="w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                      <span className="text-sm font-bold text-ink">{item.votes}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                      <p className="text-sm font-semibold text-ink">{item.title}</p>
                       <div className="flex gap-2 mt-1">
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: item.statusColor + "18", color: item.statusColor }}>{item.status}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{item.category}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-cream text-subtle">{item.category}</span>
                       </div>
                     </div>
                   </div>
@@ -118,13 +119,13 @@ export default function HomePage() {
       </section>
 
       {/* Features grid */}
-      <section className="px-6 py-20 bg-gray-50" id="features">
+      <section className="px-6 py-24" id="features">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Everything you need to close the feedback loop</h2>
-            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">From collecting ideas to shipping features, Feature Keeper keeps your team aligned with what users actually want.</p>
+            <h2 className="text-3xl sm:text-4xl font-serif text-ink">Everything you need to close the feedback loop</h2>
+            <p className="mt-4 text-lg text-subtle max-w-2xl mx-auto">From collecting ideas to shipping features, Feature Keeper keeps your team aligned with what users actually want.</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: (
@@ -182,32 +183,128 @@ export default function HomePage() {
                 description: "Email verification for public users, SSO for enterprise. JWT-based admin auth keeps everything secure.",
               },
             ].map((feature, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-4">
+              <Card key={i} variant="interactive" padding="lg" className="group">
+                <div className="w-11 h-11 bg-accent-soft rounded-xl flex items-center justify-center text-accent mb-4 group-hover:bg-accent group-hover:text-white transition-colors duration-200">
                   {feature.icon}
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{feature.description}</p>
-              </div>
+                <h3 className="text-base font-semibold text-ink mb-2">{feature.title}</h3>
+                <p className="text-sm text-subtle leading-relaxed">{feature.description}</p>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-24 bg-surface border-y border-edge">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-16">Up and running in minutes</h2>
+          <h2 className="text-3xl sm:text-4xl font-serif text-center text-ink mb-16">Up and running in minutes</h2>
           <div className="grid sm:grid-cols-3 gap-12">
             {[
               { step: "01", title: "Create your board", description: "Sign up, name your organization, and create a feedback board. Share the public link with your users." },
               { step: "02", title: "Collect & prioritize", description: "Users submit ideas and vote. You see what matters most, organized by status and category." },
               { step: "03", title: "Ship & communicate", description: "Update statuses as you build. Users stay in the loop without you writing a single changelog." },
             ].map((item, i) => (
-              <div key={i} className="text-center">
-                <div className="text-4xl font-extrabold text-indigo-100 mb-3">{item.step}</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
+              <div key={i} className="text-center animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
+                <div className="text-5xl font-serif font-bold text-accent/20 mb-3">{item.step}</div>
+                <h3 className="text-lg font-semibold text-ink mb-2">{item.title}</h3>
+                <p className="text-sm text-subtle leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="px-6 py-24">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-serif text-ink">Simple, transparent pricing</h2>
+            <p className="mt-4 text-lg text-subtle">Start free and scale as your community grows.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                name: "Free",
+                price: "$0",
+                period: "forever",
+                description: "For individuals and side projects",
+                features: ["1 board", "50 feature requests", "Community voting", "Basic statuses"],
+                cta: "Get started",
+                highlighted: false,
+              },
+              {
+                name: "Starter",
+                price: "$19",
+                period: "/month",
+                description: "For small teams getting organized",
+                features: ["3 boards", "Unlimited requests", "Custom statuses", "Team members (3)", "Email notifications"],
+                cta: "Start free trial",
+                highlighted: false,
+              },
+              {
+                name: "Pro",
+                price: "$49",
+                period: "/month",
+                description: "For growing products with active users",
+                features: ["Unlimited boards", "Unlimited requests", "Custom branding", "Team members (10)", "Priority support", "API access"],
+                cta: "Start free trial",
+                highlighted: true,
+              },
+              {
+                name: "Enterprise",
+                price: "Custom",
+                period: "",
+                description: "For organizations at scale",
+                features: ["Everything in Pro", "SSO / SAML", "Unlimited team", "Dedicated support", "SLA guarantee", "Custom integrations"],
+                cta: "Contact sales",
+                highlighted: false,
+              },
+            ].map((plan, i) => (
+              <div
+                key={i}
+                className={`rounded-xl p-6 flex flex-col ${
+                  plan.highlighted
+                    ? "bg-nav text-white ring-2 ring-accent shadow-xl scale-[1.02]"
+                    : "bg-surface border border-edge"
+                }`}
+              >
+                <h3 className={`text-sm font-semibold uppercase tracking-wider ${plan.highlighted ? "text-accent" : "text-accent"}`}>
+                  {plan.name}
+                </h3>
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className={`text-3xl font-serif font-bold ${plan.highlighted ? "text-white" : "text-ink"}`}>
+                    {plan.price}
+                  </span>
+                  {plan.period && (
+                    <span className={`text-sm ${plan.highlighted ? "text-white/60" : "text-muted"}`}>
+                      {plan.period}
+                    </span>
+                  )}
+                </div>
+                <p className={`mt-2 text-sm ${plan.highlighted ? "text-white/60" : "text-subtle"}`}>
+                  {plan.description}
+                </p>
+                <ul className="mt-6 space-y-2.5 flex-1">
+                  {plan.features.map((feature, j) => (
+                    <li key={j} className="flex items-start gap-2 text-sm">
+                      <svg className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlighted ? "text-accent" : "text-positive"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span className={plan.highlighted ? "text-white/80" : "text-subtle"}>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/register"
+                  className={`mt-6 block text-center py-2.5 rounded-lg text-sm font-semibold transition ${
+                    plan.highlighted
+                      ? "bg-accent text-white hover:bg-accent-bold"
+                      : "bg-cream text-ink border border-edge hover:border-edge-strong"
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
               </div>
             ))}
           </div>
@@ -216,14 +313,14 @@ export default function HomePage() {
 
       {/* CTA */}
       <section className="px-6 py-20">
-        <div className="max-w-3xl mx-auto text-center bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-12 sm:p-16 shadow-xl shadow-indigo-200">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">Start building what users want</h2>
-          <p className="mt-4 text-indigo-100 text-lg max-w-lg mx-auto">
+        <div className="max-w-3xl mx-auto text-center bg-nav rounded-3xl p-12 sm:p-16 shadow-xl">
+          <h2 className="text-3xl sm:text-4xl font-serif text-white">Start building what users want</h2>
+          <p className="mt-4 text-white/60 text-lg max-w-lg mx-auto">
             Stop guessing. Let your community tell you what to build next.
           </p>
           <Link
             href="/register"
-            className="inline-block mt-8 px-8 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold text-base hover:bg-indigo-50 transition shadow-lg"
+            className="inline-block mt-8 px-8 py-3.5 bg-accent text-white rounded-xl font-semibold text-base hover:bg-accent-bold transition shadow-lg"
           >
             Get started for free
           </Link>
@@ -231,17 +328,24 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 px-6 py-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center">
-              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
+      <footer className="border-t border-edge px-6 py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 bg-accent rounded flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <span className="text-sm font-semibold text-ink font-serif">Feature Keeper</span>
             </div>
-            Feature Keeper
+            <div className="flex items-center gap-6">
+              <Link href="#features" className="text-sm text-subtle hover:text-ink transition">Features</Link>
+              <Link href="/login" className="text-sm text-subtle hover:text-ink transition">Sign in</Link>
+              <Link href="/register" className="text-sm text-subtle hover:text-ink transition">Get started</Link>
+            </div>
+            <p className="text-sm text-muted">Built for teams that listen to their users.</p>
           </div>
-          <p className="text-sm text-gray-400">Built for teams that listen to their users.</p>
         </div>
       </footer>
     </div>

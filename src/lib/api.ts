@@ -10,7 +10,6 @@ type RequestOptions = {
 export class ApiError extends Error {
   status: number;
   errors: string[];
-
   constructor(status: number, message: string, errors: string[] = []) {
     super(message);
     this.status = status;
@@ -25,15 +24,8 @@ interface ApiResponse<T> {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
   const { method = "GET", body, token, headers: extraHeaders } = options;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...extraHeaders,
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...extraHeaders };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -41,9 +33,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (method === "DELETE" && res.status === 204) {
-    return { data: undefined as T };
-  }
+  if (method === "DELETE" && res.status === 204) return { data: undefined as T };
 
   const data = await res.json().catch(() => null);
 
@@ -53,141 +43,103 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
   }
 
   const result: ApiResponse<T> = { data: data as T };
-
-  // Capture token from response header (login/register)
   const authHeader = res.headers.get("Authorization");
-  if (authHeader) {
-    result.token = authHeader.replace("Bearer ", "");
-  }
-
+  if (authHeader) result.token = authHeader.replace("Bearer ", "");
   return result;
 }
 
-// Auth (Devise)
+// Auth
 export const auth = {
   register: (body: { name: string; email: string; password: string }) =>
-    request<{ user: import("@/types").User }>("/users", { method: "POST", body: { user: body } }),
+    request<{ user: import("@/types").User; has_project: boolean }>("/users", { method: "POST", body: { user: body } }),
   login: (body: { email: string; password: string }) =>
-    request<{ user: import("@/types").User }>("/users/sign_in", { method: "POST", body: { user: body } }),
+    request<{ user: import("@/types").User; has_project: boolean }>("/users/sign_in", { method: "POST", body: { user: body } }),
   logout: (token: string) =>
     request<void>("/users/sign_out", { method: "DELETE", token }),
 };
 
-// Organizations
-export const organizations = {
-  list: (token: string) =>
-    request<import("@/types").Organization[]>("/organizations", { token }),
-  create: (token: string, body: { organization: { name: string; slug: string }; plan_id?: number }) =>
-    request<import("@/types").Organization>("/organizations", { method: "POST", body, token }),
-  get: (token: string, id: number) =>
-    request<import("@/types").Organization>(`/organizations/${id}`, { token }),
-  update: (token: string, id: number, body: { organization: { name?: string; auth_mode?: string } }) =>
-    request<import("@/types").Organization>(`/organizations/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, id: number) =>
-    request<void>(`/organizations/${id}`, { method: "DELETE", token }),
-  regenerateSsoSecret: (token: string, id: number) =>
-    request<{ sso_secret: string }>(`/organizations/${id}/regenerate_sso_secret`, { method: "POST", token }),
-  resolve: (slug: string) =>
-    request<{ id: number; name: string; slug: string; auth_mode: string }>(`/organizations/resolve/${slug}`),
+// Project (admin)
+export const project = {
+  setup: (token: string, body: { name: string; slug: string; website_url?: string; accent_color?: string }) =>
+    request<import("@/types").Project>("/projects/setup", { method: "POST", body, token }),
+  get: (token: string) =>
+    request<import("@/types").Project>("/project", { token }),
+  update: (token: string, body: { project: Partial<{ name: string; slug: string; website_url: string; accent_color: string }> }) =>
+    request<import("@/types").Project>("/project", { method: "PATCH", body, token }),
+  delete: (token: string) =>
+    request<void>("/project", { method: "DELETE", token }),
 };
 
-// Memberships
-export const memberships = {
-  list: (token: string, orgId: number) =>
-    request<import("@/types").Membership[]>(`/organizations/${orgId}/memberships`, { token }),
-  create: (token: string, orgId: number, body: { email: string; role: string }) =>
-    request<import("@/types").Membership>(`/organizations/${orgId}/memberships`, { method: "POST", body, token }),
-  update: (token: string, orgId: number, id: number, body: { role: string }) =>
-    request<import("@/types").Membership>(`/organizations/${orgId}/memberships/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, orgId: number, id: number) =>
-    request<void>(`/organizations/${orgId}/memberships/${id}`, { method: "DELETE", token }),
-};
-
-// Boards (admin)
-export const boards = {
-  list: (token: string, orgId: number) =>
-    request<import("@/types").Board[]>(`/organizations/${orgId}/boards`, { token }),
-  create: (token: string, orgId: number, body: { board: { name: string; slug: string; description?: string } }) =>
-    request<import("@/types").Board>(`/organizations/${orgId}/boards`, { method: "POST", body, token }),
-  get: (token: string, orgId: number, id: number) =>
-    request<import("@/types").Board>(`/organizations/${orgId}/boards/${id}`, { token }),
-  update: (token: string, orgId: number, id: number, body: { board: Partial<{ name: string; slug: string; description: string }> }) =>
-    request<import("@/types").Board>(`/organizations/${orgId}/boards/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, orgId: number, id: number) =>
-    request<void>(`/organizations/${orgId}/boards/${id}`, { method: "DELETE", token }),
-};
-
-// Statuses (admin)
-export const statuses = {
-  create: (token: string, orgId: number, boardId: number, body: { status: { name: string; color: string; position?: number; is_default?: boolean } }) =>
-    request<import("@/types").Status>(`/organizations/${orgId}/boards/${boardId}/statuses`, { method: "POST", body, token }),
-  update: (token: string, orgId: number, boardId: number, id: number, body: { status: Partial<{ name: string; color: string; position: number; is_default: boolean }> }) =>
-    request<import("@/types").Status>(`/organizations/${orgId}/boards/${boardId}/statuses/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, orgId: number, boardId: number, id: number) =>
-    request<void>(`/organizations/${orgId}/boards/${boardId}/statuses/${id}`, { method: "DELETE", token }),
-};
-
-// Categories (admin)
-export const categories = {
-  create: (token: string, orgId: number, boardId: number, body: { category: { name: string; color: string; position?: number } }) =>
-    request<import("@/types").Category>(`/organizations/${orgId}/boards/${boardId}/categories`, { method: "POST", body, token }),
-  update: (token: string, orgId: number, boardId: number, id: number, body: { category: Partial<{ name: string; color: string; position: number }> }) =>
-    request<import("@/types").Category>(`/organizations/${orgId}/boards/${boardId}/categories/${id}`, { method: "PATCH", body, token }),
-  delete: (token: string, orgId: number, boardId: number, id: number) =>
-    request<void>(`/organizations/${orgId}/boards/${boardId}/categories/${id}`, { method: "DELETE", token }),
-};
-
-// Admin idea moderation
+// Admin Ideas
 export const adminIdeas = {
-  updateStatus: (token: string, orgId: number, boardId: number, ideaId: number, statusId: number) =>
-    request<import("@/types").Idea>(`/organizations/${orgId}/boards/${boardId}/admin/ideas/${ideaId}/update_status`, { method: "PATCH", body: { status_id: statusId }, token }),
-  updateCategory: (token: string, orgId: number, boardId: number, ideaId: number, categoryId: number | null) =>
-    request<import("@/types").Idea>(`/organizations/${orgId}/boards/${boardId}/admin/ideas/${ideaId}/update_category`, { method: "PATCH", body: { category_id: categoryId }, token }),
-  delete: (token: string, orgId: number, boardId: number, ideaId: number) =>
-    request<void>(`/organizations/${orgId}/boards/${boardId}/admin/ideas/${ideaId}`, { method: "DELETE", token }),
+  list: (token: string, params?: Record<string, string>) => {
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ ideas: import("@/types").Idea[]; meta: import("@/types").PaginationMeta }>(`/project/ideas${qs}`, { token });
+  },
+  create: (token: string, body: { title: string; description?: string; topic_ids?: number[] }) =>
+    request<import("@/types").Idea>("/project/ideas", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { title?: string; description?: string }) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}`, { method: "PATCH", body, token }),
+  updateStatus: (token: string, id: number, status_id: number) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}/status`, { method: "PATCH", body: { status_id }, token }),
+  updateTopics: (token: string, id: number, topic_ids: number[]) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}/topics`, { method: "PATCH", body: { topic_ids }, token }),
+  archive: (token: string, id: number) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}/archive`, { method: "POST", token }),
+  unarchive: (token: string, id: number) =>
+    request<import("@/types").Idea>(`/project/ideas/${id}/unarchive`, { method: "POST", token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/project/ideas/${id}`, { method: "DELETE", token }),
+  vote: (token: string, id: number) =>
+    request<{ voted: boolean; votes_count: number }>(`/project/ideas/${id}/vote`, { method: "POST", token }),
+  comments: (token: string, id: number) =>
+    request<import("@/types").Comment[]>(`/project/ideas/${id}/comments`, { token }),
+  createComment: (token: string, id: number, body: { body: string }) =>
+    request<import("@/types").Comment>(`/project/ideas/${id}/comments`, { method: "POST", body, token }),
+  deleteComment: (token: string, ideaId: number, commentId: number) =>
+    request<void>(`/project/ideas/${ideaId}/comments/${commentId}`, { method: "DELETE", token }),
 };
 
-// Admin comments (separate endpoint from public comments)
-export const adminComments = {
-  create: (token: string, orgId: number, boardId: number, ideaId: number, body: { body: string }) =>
-    request<import("@/types").Comment>(`/organizations/${orgId}/boards/${boardId}/ideas/${ideaId}/admin_comments`, { method: "POST", body, token }),
-  delete: (token: string, orgId: number, boardId: number, ideaId: number, commentId: number) =>
-    request<void>(`/organizations/${orgId}/boards/${boardId}/ideas/${ideaId}/admin_comments/${commentId}`, { method: "DELETE", token }),
+// Admin Statuses
+export const statuses = {
+  list: (token: string) => request<import("@/types").Status[]>("/project/statuses", { token }),
+  create: (token: string, body: { status: { name: string; color: string; position?: number; is_default?: boolean } }) =>
+    request<import("@/types").Status>("/project/statuses", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { status: Partial<{ name: string; color: string; position: number; is_default: boolean }> }) =>
+    request<import("@/types").Status>(`/project/statuses/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/project/statuses/${id}`, { method: "DELETE", token }),
+};
+
+// Admin Topics
+export const topics = {
+  list: (token: string) => request<import("@/types").Topic[]>("/project/topics", { token }),
+  create: (token: string, body: { topic: { name: string; color: string; position?: number } }) =>
+    request<import("@/types").Topic>("/project/topics", { method: "POST", body, token }),
+  update: (token: string, id: number, body: { topic: Partial<{ name: string; color: string; position: number }> }) =>
+    request<import("@/types").Topic>(`/project/topics/${id}`, { method: "PATCH", body, token }),
+  delete: (token: string, id: number) =>
+    request<void>(`/project/topics/${id}`, { method: "DELETE", token }),
 };
 
 // Public board
 export const publicBoard = {
-  get: (orgSlug: string, boardSlug: string) =>
-    request<import("@/types").Board & { auth_mode: string }>(`/o/${orgSlug}/b/${boardSlug}`),
-  ideas: (orgSlug: string, boardSlug: string, params?: Record<string, string>) => {
+  get: (slug: string) => request<import("@/types").PublicBoard>(`/p/${slug}`),
+  ideas: (slug: string, params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return request<{ ideas: import("@/types").Idea[]; meta: import("@/types").PaginationMeta }>(`/o/${orgSlug}/b/${boardSlug}/ideas${qs}`);
+    return request<{ ideas: import("@/types").Idea[]; meta: import("@/types").PaginationMeta }>(`/p/${slug}/ideas${qs}`);
   },
-  getIdea: (orgSlug: string, boardSlug: string, id: number) =>
-    request<import("@/types").Idea>(`/o/${orgSlug}/b/${boardSlug}/ideas/${id}`),
-  createIdea: (orgSlug: string, boardSlug: string, body: { idea: { title: string; description: string; category_id?: number }; end_user_id: number }) =>
-    request<import("@/types").Idea>(`/o/${orgSlug}/b/${boardSlug}/ideas`, { method: "POST", body }),
-  updateIdea: (orgSlug: string, boardSlug: string, id: number, body: { idea: { title?: string; description?: string }; end_user_id: number }) =>
-    request<import("@/types").Idea>(`/o/${orgSlug}/b/${boardSlug}/ideas/${id}`, { method: "PATCH", body }),
-  vote: (orgSlug: string, boardSlug: string, ideaId: number, endUserId: number) =>
-    request<{ voted: boolean; votes_count: number }>(`/o/${orgSlug}/b/${boardSlug}/ideas/${ideaId}/vote`, { method: "POST", body: { end_user_id: endUserId } }),
-  comments: (orgSlug: string, boardSlug: string, ideaId: number) =>
-    request<import("@/types").Comment[]>(`/o/${orgSlug}/b/${boardSlug}/ideas/${ideaId}/comments`),
-  createComment: (orgSlug: string, boardSlug: string, ideaId: number, body: { body: string; end_user_id: number }) =>
-    request<import("@/types").Comment>(`/o/${orgSlug}/b/${boardSlug}/ideas/${ideaId}/comments`, { method: "POST", body }),
-};
-
-// End user auth (scoped to org, not board)
-export const endUserAuth = {
-  sendCode: (orgSlug: string, body: { email: string; name: string }) =>
-    request<import("@/types").EndUser & { verification_required?: boolean }>(`/o/${orgSlug}/auth/email`, { method: "POST", body }),
-  verify: (orgSlug: string, token: string) =>
-    request<import("@/types").EndUser>(`/o/${orgSlug}/auth/verify/${token}`),
-  sso: (orgSlug: string, body: { sso_token: string }) =>
-    request<import("@/types").EndUser>(`/o/${orgSlug}/auth/sso`, { method: "POST", body }),
-};
-
-// Plans
-export const plans = {
-  list: () => request<import("@/types").Plan[]>("/plans"),
+  getIdea: (slug: string, id: number, sessionId?: string) => {
+    const qs = sessionId ? `?session_id=${sessionId}` : "";
+    return request<import("@/types").Idea>(`/p/${slug}/ideas/${id}${qs}`);
+  },
+  createIdea: (slug: string, body: { title: string; description?: string; author_name: string; author_email: string; topic_ids?: number[] }) =>
+    request<{ id: number; title: string }>(`/p/${slug}/ideas`, { method: "POST", body }),
+  vote: (slug: string, ideaId: number, sessionId: string) =>
+    request<{ voted: boolean; votes_count: number }>(`/p/${slug}/ideas/${ideaId}/vote`, { method: "POST", body: { session_id: sessionId } }),
+  roadmap: (slug: string) => request<import("@/types").RoadmapStatus[]>(`/p/${slug}/roadmap`),
+  comments: (slug: string, ideaId: number) =>
+    request<import("@/types").Comment[]>(`/p/${slug}/ideas/${ideaId}/comments`),
+  createComment: (slug: string, ideaId: number, body: { body: string; author_name: string; author_email: string }) =>
+    request<import("@/types").Comment>(`/p/${slug}/ideas/${ideaId}/comments`, { method: "POST", body }),
 };

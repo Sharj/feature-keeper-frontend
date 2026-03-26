@@ -1,61 +1,65 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import type { User } from "@/types";
 
 interface AuthState {
   user: User | null;
   token: string | null;
+  hasProject: boolean;
   isLoading: boolean;
-}
-
-interface AuthContextType extends AuthState {
-  login: (user: User, token: string) => void;
+  login: (user: User, token: string, hasProject: boolean) => void;
   logout: () => void;
+  setHasProject: (val: boolean) => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, token: null, isLoading: true });
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [hasProject, setHasProject] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userJson = localStorage.getItem("user");
-    if (token && userJson) {
-      try {
-        setState({ user: JSON.parse(userJson), token, isLoading: false });
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setState({ user: null, token: null, isLoading: false });
-      }
-    } else {
-      setState({ user: null, token: null, isLoading: false });
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+    const savedHasProject = localStorage.getItem("has_project");
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setUser(JSON.parse(savedUser));
+      setHasProject(savedHasProject === "true");
     }
+    setIsLoading(false);
   }, []);
 
-  const login = useCallback((user: User, token: string) => {
+  const login = (user: User, token: string, hasProject: boolean) => {
+    setUser(user);
+    setToken(token);
+    setHasProject(hasProject);
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-    setState({ user, token, isLoading: false });
-  }, []);
+    localStorage.setItem("has_project", String(hasProject));
+  };
 
-  const logout = useCallback(() => {
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    setHasProject(false);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setState({ user: null, token: null, isLoading: false });
-  }, []);
+    localStorage.removeItem("has_project");
+  };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ user, token, hasProject, isLoading, login, logout, setHasProject }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }
