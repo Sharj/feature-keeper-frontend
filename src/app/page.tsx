@@ -418,6 +418,94 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── Pricing ─── */}
+      <section className="px-6 py-28">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-serif text-ink">
+              Simple pricing
+            </h2>
+            <p className="mt-4 text-subtle text-lg">
+              Start free, upgrade when you need more.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Free */}
+            <div className="animate-slide-up">
+              <div className="bg-surface border border-edge rounded-xl p-6 h-full flex flex-col">
+                <div className="flex-1">
+                  <h3 className="text-xl font-serif text-ink font-semibold">Free</h3>
+                  <p className="mt-1 text-2xl font-bold text-ink">
+                    $0<span className="text-sm font-normal text-muted">/month</span>
+                  </p>
+                  <ul className="mt-5 space-y-2.5">
+                    {["1 project", "5 ideas per project", "1 team member"].map(
+                      (f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-subtle">
+                          <svg className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          {f}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+                <div className="mt-8">
+                  <Link
+                    href="/register"
+                    className="block text-center px-5 py-2.5 text-base font-medium rounded-lg bg-surface text-ink border border-edge hover:border-edge-strong hover:bg-cream shadow-xs transition-all duration-150"
+                  >
+                    Get Started Free
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro */}
+            <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+              <div className="bg-surface border border-edge rounded-xl p-6 h-full flex flex-col ring-2 ring-accent">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-serif text-ink font-semibold">Pro</h3>
+                    <span className="text-[10px] uppercase tracking-wider font-semibold bg-accent text-white px-2 py-0.5 rounded-full">
+                      Popular
+                    </span>
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-ink">
+                    $0<span className="text-sm font-normal text-muted">/month during beta</span>
+                  </p>
+                  <ul className="mt-5 space-y-2.5">
+                    {[
+                      "5 projects",
+                      "Unlimited ideas",
+                      "5 team members",
+                      "Custom domain",
+                      "Remove branding",
+                    ].map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-sm text-subtle">
+                        <svg className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-8">
+                  <Link
+                    href="/register"
+                    className="block text-center px-5 py-2.5 text-base font-medium rounded-lg bg-accent text-white hover:bg-accent-bold shadow-sm hover:shadow-md transition-all duration-150"
+                  >
+                    Start with Pro
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA ─── */}
       <section className="bg-nav px-6 py-24">
         <div className="max-w-3xl mx-auto text-center">

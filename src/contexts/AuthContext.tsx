@@ -12,6 +12,7 @@ interface AuthState {
   login: (user: User, token: string, hasSubscription: boolean, projectCount: number) => void;
   logout: () => void;
   setProjectCount: (n: number) => void;
+  setHasSubscription: (val: boolean) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -59,8 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("project_count");
   };
 
+  const updateHasSubscription = (val: boolean) => {
+    setHasSubscription(val);
+    localStorage.setItem("has_subscription", String(val));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, hasSubscription, projectCount, isLoading, login, logout, setProjectCount }}>
+    <AuthContext.Provider value={{ user, token, hasSubscription, projectCount, isLoading, login, logout, setProjectCount, setHasSubscription: updateHasSubscription }}>
       {children}
     </AuthContext.Provider>
   );

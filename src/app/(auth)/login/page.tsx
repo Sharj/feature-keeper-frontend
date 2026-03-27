@@ -23,7 +23,9 @@ export default function LoginPage() {
       const res = await auth.login({ email, password });
       if (res.token) {
         login(res.data.user, res.token, res.data.has_subscription, res.data.project_count);
-        if (res.data.project_count > 0) {
+        if (!res.data.has_subscription) {
+          router.push("/dashboard/choose-plan");
+        } else if (res.data.project_count > 0) {
           router.push("/dashboard");
         } else {
           router.push("/dashboard/projects/new");

@@ -8,17 +8,19 @@ import { ProjectProvider, useProject } from "@/contexts/ProjectContext";
 import { Avatar } from "@/components/ui";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { token, projectCount, isLoading } = useAuth();
+  const { token, projectCount, hasSubscription, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !token) {
       router.push("/login");
-    } else if (!isLoading && token && projectCount === 0 && pathname !== "/dashboard/projects/new") {
+    } else if (!isLoading && token && !hasSubscription && pathname !== "/dashboard/choose-plan") {
+      router.push("/dashboard/choose-plan");
+    } else if (!isLoading && token && hasSubscription && projectCount === 0 && pathname !== "/dashboard/projects/new" && pathname !== "/dashboard/choose-plan") {
       router.push("/dashboard/projects/new");
     }
-  }, [isLoading, token, projectCount, pathname, router]);
+  }, [isLoading, token, hasSubscription, projectCount, pathname, router]);
 
   if (isLoading || !token) {
     return (

@@ -10,6 +10,8 @@ export interface Plan {
   slug: string;
   max_ideas: number | null;
   max_seats: number;
+  max_projects: number | null;
+  features?: Record<string, boolean>;
 }
 
 export interface Subscription {

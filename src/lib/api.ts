@@ -157,6 +157,13 @@ export const adminUpdates = {
     request<import("@/types").UpdateEntry>(`/projects/${projectId}/updates/${id}/unpublish`, { method: "POST", token }),
 };
 
+// Plans
+export const plans = {
+  list: () => request<import("@/types").Plan[]>("/plans"),
+  choose: (token: string, planId: number) =>
+    request<{ subscription: { id: number; plan: import("@/types").Plan } }>(`/plans/${planId}/choose`, { method: "POST", token }),
+};
+
 // Subscription
 export const subscription = {
   get: (token: string) => request<import("@/types").Subscription>("/subscription", { token }),
