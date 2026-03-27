@@ -32,8 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
-      setHasSubscription(savedHasSub === "true");
-      setProjectCount(Number(savedCount) || 0);
+      // If we have old localStorage without the new fields, assume they have a subscription and projects
+      // to avoid incorrect redirects. A fresh login will set the correct values.
+      setHasSubscription(savedHasSub !== null ? savedHasSub === "true" : true);
+      setProjectCount(savedCount !== null ? Number(savedCount) : 1);
     }
     setIsLoading(false);
   }, []);
