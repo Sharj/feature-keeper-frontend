@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProject } from "@/contexts/ProjectContext";
 import { adminUpdates } from "@/lib/api";
 import type { UpdateEntry, PaginationMeta } from "@/types";
 import {
@@ -18,6 +19,7 @@ type FilterTab = "all" | "published" | "drafts";
 
 export default function UpdatesPage() {
   const { token } = useAuth();
+  const { currentProject } = useProject();
   const [updates, setUpdates] = useState<UpdateEntry[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,13 +27,13 @@ export default function UpdatesPage() {
   const [page, setPage] = useState(1);
 
   const fetchUpdates = useCallback(async () => {
-    if (!token) return;
+    if (!token || !currentProject) return;
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(page) };
       if (filter === "published") params.published = "true";
       if (filter === "drafts") params.published = "false";
-      const res = await adminUpdates.list(token, params);
+      const res = await adminUpdates.list(token, currentProject.id, params);
       setUpdates(res.data.updates);
       setMeta(res.data.meta);
     } catch {
@@ -39,7 +41,7 @@ export default function UpdatesPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, filter]);
+  }, [token, currentProject, page, filter]);
 
   useEffect(() => {
     fetchUpdates();

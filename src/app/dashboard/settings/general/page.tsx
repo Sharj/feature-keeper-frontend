@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { project as projectApi, ApiError } from "@/lib/api";
-import type { Project } from "@/types";
+import { useProject } from "@/contexts/ProjectContext";
+import { projects, ApiError } from "@/lib/api";
 import { Button, Input, Card } from "@/components/ui";
 
 const PRESET_COLORS = [
@@ -18,8 +19,9 @@ const PRESET_COLORS = [
 ];
 
 export default function GeneralSettingsPage() {
-  const { token } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { token, projectCount, setProjectCount } = useAuth();
+  const { currentProject, refreshProjects } = useProject();
+  const router = useRouter();
 
   const [projName, setProjName] = useState("");
   const [projWebsite, setProjWebsite] = useState("");
@@ -28,31 +30,24 @@ export default function GeneralSettingsPage() {
   const [projSaving, setProjSaving] = useState(false);
   const [projError, setProjError] = useState("");
   const [projSuccess, setProjSuccess] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    projectApi
-      .get(token)
-      .then((res) => {
-        const p = res.data;
-        setProjName(p.name);
-        setProjWebsite(p.website_url || "");
-        setProjSlug(p.slug);
-        setProjAccent(p.accent_color);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [token]);
+    if (!currentProject) return;
+    setProjName(currentProject.name);
+    setProjWebsite(currentProject.website_url || "");
+    setProjSlug(currentProject.slug);
+    setProjAccent(currentProject.accent_color);
+  }, [currentProject]);
 
   async function handleProjectSave(e: FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!token || !currentProject) return;
     setProjError("");
     setProjSuccess("");
     setProjSaving(true);
     try {
-      await projectApi.update(token, {
+      await projects.update(token, currentProject.id, {
         project: {
           name: projName,
           website_url: projWebsite,
@@ -60,6 +55,7 @@ export default function GeneralSettingsPage() {
           accent_color: projAccent,
         },
       });
+      await refreshProjects();
       setProjSuccess("Project updated successfully.");
       setTimeout(() => setProjSuccess(""), 3000);
     } catch (err) {
@@ -69,7 +65,28 @@ export default function GeneralSettingsPage() {
     }
   }
 
-  if (loading) {
+  async function handleDeleteProject() {
+    if (!token || !currentProject) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this project? This action cannot be undone."
+      )
+    )
+      return;
+    setDeleting(true);
+    try {
+      await projects.delete(token, currentProject.id);
+      await refreshProjects();
+      setProjectCount(projectCount - 1);
+      router.push("/dashboard");
+    } catch {
+      // ignore
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (!currentProject) {
     return (
       <div className="py-12 text-center">
         <p className="text-muted">Loading settings...</p>
@@ -159,6 +176,17 @@ export default function GeneralSettingsPage() {
             {projSaving ? "Saving..." : "Save Changes"}
           </Button>
         </form>
+      </Card>
+
+      {/* Delete Project */}
+      <Card padding="lg" className="border-critical/30">
+        <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-critical mb-2">Delete Project</h3>
+        <p className="text-sm text-subtle mb-4">
+          Permanently delete this project and all its data. This cannot be undone.
+        </p>
+        <Button variant="danger" loading={deleting} onClick={handleDeleteProject}>
+          {deleting ? "Deleting..." : "Delete Project"}
+        </Button>
       </Card>
     </div>
   );

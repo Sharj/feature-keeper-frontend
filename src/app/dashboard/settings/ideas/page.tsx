@@ -2,8 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProject } from "@/contexts/ProjectContext";
 import {
-  project as projectApi,
+  projects,
   statuses as statusesApi,
   topics as topicsApi,
   ApiError,
@@ -13,7 +14,7 @@ import { Button, Input, Card, Badge, ColorDot } from "@/components/ui";
 
 export default function IdeasSettingsPage() {
   const { token } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { currentProject, refreshProjects } = useProject();
 
   // Approval
   const [projRequireApproval, setProjRequireApproval] = useState(false);
@@ -39,28 +40,20 @@ export default function IdeasSettingsPage() {
   const [editTopicColor, setEditTopicColor] = useState("");
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    projectApi
-      .get(token)
-      .then((res) => {
-        const p = res.data;
-        setProjRequireApproval(p.require_approval);
-        setStatusList(p.statuses);
-        setTopicList(p.topics);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [token]);
+    if (!currentProject) return;
+    setProjRequireApproval(currentProject.require_approval);
+    setStatusList(currentProject.statuses);
+    setTopicList(currentProject.topics);
+  }, [currentProject]);
 
   // Status CRUD
   async function handleStatusCreate(e: FormEvent) {
     e.preventDefault();
-    if (!token || !newStatusName.trim()) return;
+    if (!token || !newStatusName.trim() || !currentProject) return;
     setStatusCreating(true);
     setStatusError("");
     try {
-      const res = await statusesApi.create(token, {
+      const res = await statusesApi.create(token, currentProject.id, {
         status: { name: newStatusName, color: newStatusColor },
       });
       setStatusList((prev) => [...prev, res.data]);
@@ -73,9 +66,9 @@ export default function IdeasSettingsPage() {
   }
 
   async function handleStatusUpdate(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      const res = await statusesApi.update(token, id, {
+      const res = await statusesApi.update(token, currentProject.id, id, {
         status: { name: editStatusName, color: editStatusColor },
       });
       setStatusList((prev) => prev.map((s) => (s.id === id ? res.data : s)));
@@ -86,10 +79,10 @@ export default function IdeasSettingsPage() {
   }
 
   async function handleStatusDelete(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     if (!window.confirm("Delete this status?")) return;
     try {
-      await statusesApi.delete(token, id);
+      await statusesApi.delete(token, currentProject.id, id);
       setStatusList((prev) => prev.filter((s) => s.id !== id));
     } catch {
       // ignore
@@ -99,11 +92,11 @@ export default function IdeasSettingsPage() {
   // Topic CRUD
   async function handleTopicCreate(e: FormEvent) {
     e.preventDefault();
-    if (!token || !newTopicName.trim()) return;
+    if (!token || !newTopicName.trim() || !currentProject) return;
     setTopicCreating(true);
     setTopicError("");
     try {
-      const res = await topicsApi.create(token, {
+      const res = await topicsApi.create(token, currentProject.id, {
         topic: { name: newTopicName, color: newTopicColor },
       });
       setTopicList((prev) => [...prev, res.data]);
@@ -116,9 +109,9 @@ export default function IdeasSettingsPage() {
   }
 
   async function handleTopicUpdate(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      const res = await topicsApi.update(token, id, {
+      const res = await topicsApi.update(token, currentProject.id, id, {
         topic: { name: editTopicName, color: editTopicColor },
       });
       setTopicList((prev) => prev.map((t) => (t.id === id ? res.data : t)));
@@ -129,17 +122,17 @@ export default function IdeasSettingsPage() {
   }
 
   async function handleTopicDelete(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     if (!window.confirm("Delete this topic?")) return;
     try {
-      await topicsApi.delete(token, id);
+      await topicsApi.delete(token, currentProject.id, id);
       setTopicList((prev) => prev.filter((t) => t.id !== id));
     } catch {
       // ignore
     }
   }
 
-  if (loading) {
+  if (!currentProject) {
     return (
       <div className="py-12 text-center">
         <p className="text-muted">Loading settings...</p>
@@ -339,11 +332,11 @@ export default function IdeasSettingsPage() {
             role="switch"
             aria-checked={projRequireApproval}
             onClick={async () => {
-              if (!token) return;
+              if (!token || !currentProject) return;
               const next = !projRequireApproval;
               setProjRequireApproval(next);
               try {
-                await projectApi.update(token, { project: { require_approval: next } });
+                await projects.update(token, currentProject.id, { project: { require_approval: next } });
               } catch {
                 setProjRequireApproval(!next);
               }

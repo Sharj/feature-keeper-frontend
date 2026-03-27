@@ -23,8 +23,8 @@ export default function RegisterPage() {
     try {
       const res = await auth.register({ name, email, password });
       if (res.token) {
-        login(res.data.user, res.token, false);
-        router.push("/onboarding");
+        login(res.data.user, res.token, true, 0);
+        router.push("/dashboard/projects/new");
       } else {
         setError("No token received from server.");
       }

@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback, type FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminIdeas, project as projectApi, ApiError } from "@/lib/api";
-import type { Project, Idea, Comment, PaginationMeta } from "@/types";
+import { useProject } from "@/contexts/ProjectContext";
+import { adminIdeas, ApiError } from "@/lib/api";
+import type { Idea, Comment, PaginationMeta } from "@/types";
 import {
   Button,
   Input,
@@ -17,7 +18,7 @@ import {
 
 export default function DashboardPage() {
   const { token } = useAuth();
-  const [proj, setProj] = useState<Project | null>(null);
+  const { currentProject } = useProject();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,7 @@ export default function DashboardPage() {
   const [addError, setAddError] = useState("");
 
   const fetchIdeas = useCallback(async () => {
-    if (!token) return;
+    if (!token || !currentProject) return;
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(page) };
@@ -48,7 +49,7 @@ export default function DashboardPage() {
       if (sortBy) params.sort = sortBy;
       if (viewFilter === "pending") params.pending = "true";
       if (viewFilter === "archived") params.archived = "true";
-      const res = await adminIdeas.list(token, params);
+      const res = await adminIdeas.list(token, currentProject.id, params);
       setIdeas(res.data.ideas);
       setMeta(res.data.meta);
     } catch {
@@ -56,22 +57,16 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, search, statusFilter, sortBy, viewFilter]);
-
-  useEffect(() => {
-    if (token) {
-      projectApi.get(token).then((res) => setProj(res.data)).catch(() => {});
-    }
-  }, [token]);
+  }, [token, currentProject, page, search, statusFilter, sortBy, viewFilter]);
 
   useEffect(() => {
     fetchIdeas();
   }, [fetchIdeas]);
 
   async function handleVote(ideaId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      const res = await adminIdeas.vote(token, ideaId);
+      const res = await adminIdeas.vote(token, currentProject.id, ideaId);
       setIdeas((prev) =>
         prev.map((i) =>
           i.id === ideaId
@@ -85,9 +80,9 @@ export default function DashboardPage() {
   }
 
   async function handleStatusChange(ideaId: number, statusId: string) {
-    if (!token || !statusId) return;
+    if (!token || !statusId || !currentProject) return;
     try {
-      const res = await adminIdeas.updateStatus(token, ideaId, Number(statusId));
+      const res = await adminIdeas.updateStatus(token, currentProject.id, ideaId, Number(statusId));
       setIdeas((prev) => prev.map((i) => (i.id === ideaId ? res.data : i)));
     } catch {
       // ignore
@@ -95,10 +90,10 @@ export default function DashboardPage() {
   }
 
   async function loadComments(ideaId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     setCommentLoading(ideaId);
     try {
-      const res = await adminIdeas.comments(token, ideaId);
+      const res = await adminIdeas.comments(token, currentProject.id, ideaId);
       setComments((prev) => ({ ...prev, [ideaId]: res.data }));
     } catch {
       // ignore
@@ -119,10 +114,10 @@ export default function DashboardPage() {
   }
 
   async function handleReply(ideaId: number) {
-    if (!token || !replyText.trim()) return;
+    if (!token || !replyText.trim() || !currentProject) return;
     setReplyLoading(true);
     try {
-      const res = await adminIdeas.createComment(token, ideaId, { body: replyText });
+      const res = await adminIdeas.createComment(token, currentProject.id, ideaId, { body: replyText });
       setComments((prev) => ({
         ...prev,
         [ideaId]: [...(prev[ideaId] || []), res.data],
@@ -141,13 +136,13 @@ export default function DashboardPage() {
   }
 
   async function handleArchive(ideaId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
       const idea = ideas.find((i) => i.id === ideaId);
       if (idea?.archived) {
-        await adminIdeas.unarchive(token, ideaId);
+        await adminIdeas.unarchive(token, currentProject.id, ideaId);
       } else {
-        await adminIdeas.archive(token, ideaId);
+        await adminIdeas.archive(token, currentProject.id, ideaId);
       }
       fetchIdeas();
     } catch {
@@ -156,9 +151,9 @@ export default function DashboardPage() {
   }
 
   async function handleApprove(ideaId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      const res = await adminIdeas.approve(token, ideaId);
+      const res = await adminIdeas.approve(token, currentProject.id, ideaId);
       setIdeas((prev) => prev.map((i) => (i.id === ideaId ? res.data : i)));
     } catch {
       // ignore
@@ -166,10 +161,10 @@ export default function DashboardPage() {
   }
 
   async function handleDeleteIdea(ideaId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     if (!window.confirm("Are you sure you want to delete this idea?")) return;
     try {
-      await adminIdeas.delete(token, ideaId);
+      await adminIdeas.delete(token, currentProject.id, ideaId);
       setExpandedId(null);
       fetchIdeas();
     } catch {
@@ -179,11 +174,11 @@ export default function DashboardPage() {
 
   async function handleAddIdea(e: FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!token || !currentProject) return;
     setAddError("");
     setAddLoading(true);
     try {
-      await adminIdeas.create(token, {
+      await adminIdeas.create(token, currentProject.id, {
         title: newTitle,
         description: newDesc || undefined,
         topic_ids: newTopicIds.length > 0 ? newTopicIds : undefined,
@@ -207,9 +202,9 @@ export default function DashboardPage() {
   }
 
   async function handleDeleteComment(ideaId: number, commentId: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      await adminIdeas.deleteComment(token, ideaId, commentId);
+      await adminIdeas.deleteComment(token, currentProject.id, ideaId, commentId);
       setComments((prev) => ({
         ...prev,
         [ideaId]: (prev[ideaId] || []).filter((c) => c.id !== commentId),
@@ -224,12 +219,20 @@ export default function DashboardPage() {
     }
   }
 
+  if (!currentProject) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-muted">Loading project...</p>
+      </div>
+    );
+  }
+
   const atLimit =
-    proj?.plan?.max_ideas != null && proj.ideas_count >= proj.plan.max_ideas;
+    currentProject.plan?.max_ideas != null && currentProject.ideas_count >= currentProject.plan.max_ideas;
   const ideaCountLabel =
-    proj?.plan?.max_ideas != null
-      ? `${proj.ideas_count} of ${proj.plan.max_ideas}`
-      : String(proj?.ideas_count ?? 0);
+    currentProject.plan?.max_ideas != null
+      ? `${currentProject.ideas_count} of ${currentProject.plan.max_ideas}`
+      : String(currentProject.ideas_count ?? 0);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -239,7 +242,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-serif text-ink">Ideas</h1>
           <Badge className="bg-accent-soft text-accent">{ideaCountLabel}</Badge>
           <div className="flex items-center gap-1 ml-2 bg-cream rounded-lg p-0.5">
-            {(["all", ...(proj?.require_approval ? ["pending"] : []), "archived"] as const).map((f) => (
+            {(["all", ...(currentProject.require_approval ? ["pending"] : []), "archived"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => { setViewFilter(f as typeof viewFilter); setPage(1); }}
@@ -265,7 +268,7 @@ export default function DashboardPage() {
           <Select
             options={[
               { value: "", label: "All statuses" },
-              ...(proj?.statuses?.map((s) => ({
+              ...(currentProject.statuses?.map((s) => ({
                 value: String(s.id),
                 label: s.name,
               })) || []),
@@ -397,7 +400,7 @@ export default function DashboardPage() {
                   <Select
                     options={[
                       { value: "", label: "Status" },
-                      ...(proj?.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
+                      ...(currentProject.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
                     ]}
                     value={String(idea.status?.id ?? "")}
                     onChange={(e) => handleStatusChange(idea.id, e.target.value)}
@@ -533,7 +536,7 @@ export default function DashboardPage() {
                         <Select
                           options={[
                             { value: "", label: "No status" },
-                            ...(proj?.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
+                            ...(currentProject.statuses?.map((s) => ({ value: String(s.id), label: s.name })) || []),
                           ]}
                           value={String(idea.status?.id ?? "")}
                           onChange={(e) => handleStatusChange(idea.id, e.target.value)}
@@ -541,11 +544,11 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Topics */}
-                      {proj?.topics && proj.topics.length > 0 && (
+                      {currentProject.topics && currentProject.topics.length > 0 && (
                         <div>
                           <label className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-2 block">Topics</label>
                           <div className="flex flex-wrap gap-1.5">
-                            {proj.topics.map((t) => {
+                            {currentProject.topics.map((t) => {
                               const isActive = idea.topics.some((it) => it.id === t.id);
                               return (
                                 <button
@@ -554,8 +557,8 @@ export default function DashboardPage() {
                                     const newIds = isActive
                                       ? idea.topics.filter((it) => it.id !== t.id).map((it) => it.id)
                                       : [...idea.topics.map((it) => it.id), t.id];
-                                    if (token) {
-                                      adminIdeas.updateTopics(token, idea.id, newIds).then((res) => {
+                                    if (token && currentProject) {
+                                      adminIdeas.updateTopics(token, currentProject.id, idea.id, newIds).then((res) => {
                                         setIdeas((prev) => prev.map((i) => (i.id === idea.id ? res.data : i)));
                                       });
                                     }
@@ -695,11 +698,11 @@ export default function DashboardPage() {
             placeholder="Add more context..."
             rows={4}
           />
-          {proj?.topics && proj.topics.length > 0 && (
+          {currentProject.topics && currentProject.topics.length > 0 && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-ink">Topics</label>
               <div className="flex flex-wrap gap-2">
-                {proj.topics.map((t) => (
+                {currentProject.topics.map((t) => (
                   <label
                     key={t.id}
                     className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${

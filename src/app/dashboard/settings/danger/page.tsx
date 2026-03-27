@@ -1,28 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { project as projectApi } from "@/lib/api";
+import { account } from "@/lib/api";
 import { Button, Card } from "@/components/ui";
 
 export default function DangerSettingsPage() {
   const { token, logout } = useAuth();
   const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
 
-  async function handleDeleteProject() {
+  async function handleDeleteAccount() {
     if (!token) return;
     if (
       !window.confirm(
-        "Are you sure you want to delete this project? This action cannot be undone."
+        "Are you sure you want to delete your account? This will permanently delete your account, subscription, and all projects. This action cannot be undone."
       )
     )
       return;
+    setDeleting(true);
     try {
-      await projectApi.delete(token);
+      await account.delete(token);
       logout();
       router.push("/");
     } catch {
       // ignore
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -31,10 +36,10 @@ export default function DangerSettingsPage() {
       <h2 className="font-serif text-lg text-ink">Danger Zone</h2>
       <Card padding="lg" className="border-critical/30">
         <p className="text-sm text-subtle mb-4">
-          Permanently delete this project and all its data. This cannot be undone.
+          This will permanently delete your account, subscription, and all projects. This action cannot be undone.
         </p>
-        <Button variant="danger" onClick={handleDeleteProject}>
-          Delete Project
+        <Button variant="danger" loading={deleting} onClick={handleDeleteAccount}>
+          {deleting ? "Deleting..." : "Delete Account"}
         </Button>
       </Card>
     </div>

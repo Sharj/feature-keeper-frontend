@@ -3,8 +3,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminUpdates, adminIdeas, project as projectApi, ApiError } from "@/lib/api";
-import type { UpdateEntry, Idea, UpdateTag } from "@/types";
+import { useProject } from "@/contexts/ProjectContext";
+import { adminUpdates, adminIdeas, ApiError } from "@/lib/api";
+import type { UpdateEntry, Idea } from "@/types";
 import {
   Button,
   Input,
@@ -17,6 +18,7 @@ import {
 
 export default function EditUpdatePage() {
   const { token } = useAuth();
+  const { currentProject } = useProject();
   const router = useRouter();
   const params = useParams();
   const id = Number(params.id);
@@ -24,7 +26,6 @@ export default function EditUpdatePage() {
   const [update, setUpdate] = useState<UpdateEntry | null>(null);
   const [title, setTitle] = useState("");
   const [updateTagId, setUpdateTagId] = useState<string>("");
-  const [tags, setTags] = useState<UpdateTag[]>([]);
   const [body, setBody] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [ideaIds, setIdeaIds] = useState<number[]>([]);
@@ -35,12 +36,11 @@ export default function EditUpdatePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !currentProject) return;
     Promise.all([
-      adminUpdates.get(token, id),
-      adminIdeas.list(token, { page: "1" }),
-      projectApi.get(token),
-    ]).then(([updateRes, ideasRes, projRes]) => {
+      adminUpdates.get(token, currentProject.id, id),
+      adminIdeas.list(token, currentProject.id, { page: "1" }),
+    ]).then(([updateRes, ideasRes]) => {
       const u = updateRes.data;
       setUpdate(u);
       setTitle(u.title);
@@ -49,9 +49,8 @@ export default function EditUpdatePage() {
       setCoverImageUrl(u.cover_image_url || "");
       setIdeaIds(u.ideas?.map((i) => i.id) || []);
       setIdeas(ideasRes.data.ideas);
-      setTags(projRes.data.update_tags || []);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [token, id]);
+  }, [token, currentProject, id]);
 
   function toggleIdea(ideaId: number) {
     setIdeaIds((prev) =>
@@ -61,11 +60,11 @@ export default function EditUpdatePage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (!token || !title.trim()) return;
+    if (!token || !title.trim() || !currentProject) return;
     setError("");
     setSaving(true);
     try {
-      await adminUpdates.update(token, id, {
+      await adminUpdates.update(token, currentProject.id, id, {
         title,
         body,
         update_tag_id: updateTagId ? Number(updateTagId) : null,
@@ -82,18 +81,18 @@ export default function EditUpdatePage() {
 
   async function handlePublish(e: FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!token || !currentProject) return;
     setError("");
     setSaving(true);
     try {
-      await adminUpdates.update(token, id, {
+      await adminUpdates.update(token, currentProject.id, id, {
         title,
         body,
         update_tag_id: updateTagId ? Number(updateTagId) : null,
         cover_image_url: coverImageUrl || undefined,
         idea_ids: ideaIds,
       });
-      await adminUpdates.publish(token, id);
+      await adminUpdates.publish(token, currentProject.id, id);
       router.push("/dashboard/updates");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to publish update");
@@ -103,10 +102,10 @@ export default function EditUpdatePage() {
   }
 
   async function handleUnpublish() {
-    if (!token) return;
+    if (!token || !currentProject) return;
     setSaving(true);
     try {
-      await adminUpdates.unpublish(token, id);
+      await adminUpdates.unpublish(token, currentProject.id, id);
       router.push("/dashboard/updates");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to unpublish update");
@@ -116,15 +115,17 @@ export default function EditUpdatePage() {
   }
 
   async function handleDelete() {
-    if (!token) return;
+    if (!token || !currentProject) return;
     if (!window.confirm("Are you sure you want to delete this update?")) return;
     try {
-      await adminUpdates.delete(token, id);
+      await adminUpdates.delete(token, currentProject.id, id);
       router.push("/dashboard/updates");
     } catch {
       // ignore
     }
   }
+
+  const tags = currentProject?.update_tags || [];
 
   const filteredIdeas = ideaSearch
     ? ideas.filter((i) => i.title.toLowerCase().includes(ideaSearch.toLowerCase()))

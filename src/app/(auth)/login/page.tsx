@@ -22,11 +22,11 @@ export default function LoginPage() {
     try {
       const res = await auth.login({ email, password });
       if (res.token) {
-        login(res.data.user, res.token, res.data.has_project);
-        if (res.data.has_project) {
+        login(res.data.user, res.token, res.data.has_subscription, res.data.project_count);
+        if (res.data.project_count > 0) {
           router.push("/dashboard");
         } else {
-          router.push("/onboarding");
+          router.push("/dashboard/projects/new");
         }
       } else {
         setError("No token received from server.");

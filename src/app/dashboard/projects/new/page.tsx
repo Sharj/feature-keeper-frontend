@@ -2,8 +2,9 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { project, ApiError } from "@/lib/api";
+import { projects, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProject } from "@/contexts/ProjectContext";
 import { Card, Input, Button } from "@/components/ui";
 
 const PRESET_COLORS = [
@@ -24,9 +25,10 @@ function toSlug(name: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-export default function OnboardingPage() {
+export default function NewProjectPage() {
   const router = useRouter();
-  const { token, isLoading, setHasProject } = useAuth();
+  const { token, isLoading, projectCount, setProjectCount } = useAuth();
+  const { refreshProjects } = useProject();
   const [name, setName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [slug, setSlug] = useState("");
@@ -53,13 +55,14 @@ export default function OnboardingPage() {
     setError("");
     setLoading(true);
     try {
-      await project.setup(token, {
+      await projects.create(token, {
         name,
         slug: slug || toSlug(name),
         website_url: websiteUrl || undefined,
         accent_color: accentColor,
       });
-      setHasProject(true);
+      await refreshProjects();
+      setProjectCount(projectCount + 1);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create project");
@@ -85,7 +88,7 @@ export default function OnboardingPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-serif text-ink">Tell us about your product</h1>
+          <h1 className="text-3xl font-serif text-ink">Create a new project</h1>
           <p className="mt-2 text-subtle text-sm">Set up your feedback board in just a minute</p>
         </div>
 
@@ -191,7 +194,7 @@ export default function OnboardingPage() {
             </div>
 
             <Button type="submit" loading={loading} fullWidth size="lg">
-              {loading ? "Setting up..." : "Create Board"}
+              {loading ? "Setting up..." : "Create Project"}
             </Button>
           </form>
         </Card>

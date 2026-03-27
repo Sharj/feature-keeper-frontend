@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProject } from "@/contexts/ProjectContext";
 import {
-  project as projectApi,
   updateTags as updateTagsApi,
   ApiError,
 } from "@/lib/api";
@@ -12,7 +12,7 @@ import { Button, Input, Card, ColorDot } from "@/components/ui";
 
 export default function UpdatesSettingsPage() {
   const { token } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { currentProject } = useProject();
 
   // Update Tags
   const [tagList, setTagList] = useState<UpdateTag[]>([]);
@@ -25,24 +25,17 @@ export default function UpdatesSettingsPage() {
   const [editTagColor, setEditTagColor] = useState("");
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    projectApi
-      .get(token)
-      .then((res) => {
-        setTagList(res.data.update_tags || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [token]);
+    if (!currentProject) return;
+    setTagList(currentProject.update_tags || []);
+  }, [currentProject]);
 
   async function handleTagCreate(e: FormEvent) {
     e.preventDefault();
-    if (!token || !newTagName.trim()) return;
+    if (!token || !newTagName.trim() || !currentProject) return;
     setTagCreating(true);
     setTagError("");
     try {
-      const res = await updateTagsApi.create(token, {
+      const res = await updateTagsApi.create(token, currentProject.id, {
         update_tag: { name: newTagName, color: newTagColor },
       });
       setTagList((prev) => [...prev, res.data]);
@@ -55,9 +48,9 @@ export default function UpdatesSettingsPage() {
   }
 
   async function handleTagUpdate(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     try {
-      const res = await updateTagsApi.update(token, id, {
+      const res = await updateTagsApi.update(token, currentProject.id, id, {
         update_tag: { name: editTagName, color: editTagColor },
       });
       setTagList((prev) => prev.map((t) => (t.id === id ? res.data : t)));
@@ -68,17 +61,17 @@ export default function UpdatesSettingsPage() {
   }
 
   async function handleTagDelete(id: number) {
-    if (!token) return;
+    if (!token || !currentProject) return;
     if (!window.confirm("Delete this tag?")) return;
     try {
-      await updateTagsApi.delete(token, id);
+      await updateTagsApi.delete(token, currentProject.id, id);
       setTagList((prev) => prev.filter((t) => t.id !== id));
     } catch {
       // ignore
     }
   }
 
-  if (loading) {
+  if (!currentProject) {
     return (
       <div className="py-12 text-center">
         <p className="text-muted">Loading settings...</p>
