@@ -99,29 +99,45 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               Feature Keeper
             </Link>
 
-            {/* Project dropdown */}
+            {/* Project selector */}
             <div className="relative" ref={projDropdownRef}>
-              <button
-                onClick={() => setProjDropdownOpen(!projDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-cream/80 hover:text-cream hover:bg-white/5 rounded-md transition-colors cursor-pointer"
-              >
-                {currentProject ? (
-                  <>
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: currentProject.accent_color || "#6366f1" }}
-                    />
-                    <span className="truncate max-w-[160px]">{currentProject.name}</span>
-                  </>
-                ) : (
-                  <span>Select project</span>
-                )}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
+              {maxProjects != null && maxProjects <= 1 ? (
+                /* Single project — just show name, no dropdown */
+                <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-cream/80">
+                  {currentProject && (
+                    <>
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: currentProject.accent_color || "#6366f1" }}
+                      />
+                      <span className="truncate max-w-[160px]">{currentProject.name}</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                /* Multi-project — show dropdown */
+                <button
+                  onClick={() => setProjDropdownOpen(!projDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-cream/80 hover:text-cream hover:bg-white/5 rounded-md transition-colors cursor-pointer"
+                >
+                  {currentProject ? (
+                    <>
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: currentProject.accent_color || "#6366f1" }}
+                      />
+                      <span className="truncate max-w-[160px]">{currentProject.name}</span>
+                    </>
+                  ) : (
+                    <span>Select project</span>
+                  )}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              )}
 
-              {projDropdownOpen && (
+              {projDropdownOpen && maxProjects != null && maxProjects > 1 && (
                 <div className="absolute left-0 top-full mt-2 w-64 bg-surface border border-edge rounded-xl shadow-lg py-1 animate-scale-in z-50">
                   {projects.map((p) => (
                     <button
