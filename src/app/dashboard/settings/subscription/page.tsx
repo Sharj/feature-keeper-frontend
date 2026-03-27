@@ -64,16 +64,8 @@ export default function SubscriptionSettingsPage() {
         </p>
         <div className="mt-3 space-y-1 text-sm text-subtle">
           <p>
-            Projects used: <span className="font-medium text-ink">{sub?.projects_count ?? 0}</span>
-            {sub?.projects_remaining != null && (
-              <span> of {sub.projects_count + sub.projects_remaining}</span>
-            )}
+            Ideas per project: <span className="font-medium text-ink">{sub?.plan?.max_ideas ?? "Unlimited"}</span>
           </p>
-          {sub?.projects_remaining != null && (
-            <p>
-              Projects remaining: <span className="font-medium text-ink">{sub.projects_remaining}</span>
-            </p>
-          )}
         </div>
         <div className="mt-4">
           <span className="text-sm text-accent font-medium cursor-pointer hover:underline">

@@ -439,7 +439,7 @@ export default function HomePage() {
                     $0<span className="text-sm font-normal text-muted">/month</span>
                   </p>
                   <ul className="mt-5 space-y-2.5">
-                    {["1 project", "5 ideas per project", "1 team member"].map(
+                    {["Up to 5 ideas", "Public feedback board", "Roadmap view", "Updates / Changelog"].map(
                       (f) => (
                         <li key={f} className="flex items-center gap-2 text-sm text-subtle">
                           <svg className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -477,9 +477,8 @@ export default function HomePage() {
                   </p>
                   <ul className="mt-5 space-y-2.5">
                     {[
-                      "5 projects",
                       "Unlimited ideas",
-                      "5 team members",
+                      "Everything in Free",
                       "Custom domain",
                       "Remove branding",
                     ].map((f) => (

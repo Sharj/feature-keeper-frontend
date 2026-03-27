@@ -9,14 +9,14 @@ import type { Plan } from "@/types";
 
 const planFeatures: Record<string, string[]> = {
   free: [
-    "1 project",
-    "5 ideas per project",
-    "1 team member",
+    "Up to 5 ideas",
+    "Public feedback board",
+    "Roadmap view",
+    "Updates / Changelog",
   ],
   pro: [
-    "5 projects",
     "Unlimited ideas",
-    "5 team members",
+    "Everything in Free",
     "Custom domain",
     "Remove branding",
   ],
