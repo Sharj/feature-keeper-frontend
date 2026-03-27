@@ -86,7 +86,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     return pathname === href;
   }
 
-  const maxProjects = currentProject?.plan?.max_ideas !== undefined ? (currentProject.plan as { max_projects?: number }).max_projects : null;
+  const maxProjects = currentProject?.plan?.max_projects ?? null;
+  const canHaveMultipleProjects = maxProjects === null || maxProjects > 1;
   const atLimit = maxProjects != null && projects.length >= maxProjects;
 
   return (
@@ -101,7 +102,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
             {/* Project selector */}
             <div className="relative" ref={projDropdownRef}>
-              {maxProjects != null && maxProjects <= 1 ? (
+              {!canHaveMultipleProjects ? (
                 /* Single project — just show name, no dropdown */
                 <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-cream/80">
                   {currentProject && (
@@ -137,7 +138,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 </button>
               )}
 
-              {projDropdownOpen && maxProjects != null && maxProjects > 1 && (
+              {projDropdownOpen && canHaveMultipleProjects && (
                 <div className="absolute left-0 top-full mt-2 w-64 bg-surface border border-edge rounded-xl shadow-lg py-1 animate-scale-in z-50">
                   {projects.map((p) => (
                     <button
