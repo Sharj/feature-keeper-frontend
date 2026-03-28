@@ -1,73 +1,43 @@
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import HomePage from "@/app/page";
 
+// Mock next/link
 jest.mock("next/link", () => {
-  return function MockLink({ children, href, ...rest }: { children: React.ReactNode; href: string; [key: string]: unknown }) {
-    return <a href={href} {...rest}>{children}</a>;
-  };
+  return ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
+    <a href={href} {...props}>{children}</a>
+  );
 });
 
 describe("HomePage", () => {
-  it("renders the hero section", () => {
+  it("renders the hero heading", () => {
     render(<HomePage />);
-    expect(screen.getAllByText("Feature Keeper").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Turn user feedback into/)).toBeInTheDocument();
+    expect(screen.getByText(/Know what your users/i)).toBeInTheDocument();
+    expect(screen.getByText(/actually want/i)).toBeInTheDocument();
   });
 
-  it("has navigation links", () => {
+  it("renders pricing section with Free and Pro plans", () => {
     render(<HomePage />);
-    expect(screen.getByText("Sign in")).toBeInTheDocument();
-    expect(screen.getByText("Get started free")).toBeInTheDocument();
+    expect(screen.getByText("Simple pricing")).toBeInTheDocument();
+    expect(screen.getByText("Free")).toBeInTheDocument();
+    expect(screen.getByText("Pro")).toBeInTheDocument();
+    expect(screen.getByText("Get Started Free")).toBeInTheDocument();
+    expect(screen.getByText("Start with Pro")).toBeInTheDocument();
   });
 
-  it("renders the features section", () => {
+  it("has links to /register and /login", () => {
     render(<HomePage />);
-    expect(screen.getByText("Public feedback boards")).toBeInTheDocument();
-    expect(screen.getByText("Voting & prioritization")).toBeInTheDocument();
-    expect(screen.getByText("Threaded comments")).toBeInTheDocument();
-    expect(screen.getByText("Statuses & categories")).toBeInTheDocument();
-    expect(screen.getByText("Team collaboration")).toBeInTheDocument();
-    expect(screen.getByText("Flexible authentication")).toBeInTheDocument();
-  });
-
-  it("renders the how it works section", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Up and running in minutes")).toBeInTheDocument();
-    expect(screen.getByText("Create your board")).toBeInTheDocument();
-    expect(screen.getByText("Collect & prioritize")).toBeInTheDocument();
-    expect(screen.getByText("Ship & communicate")).toBeInTheDocument();
-  });
-
-  it("renders the CTA section", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Start building what users want")).toBeInTheDocument();
-    expect(screen.getByText("Get started for free")).toBeInTheDocument();
-  });
-
-  it("renders the mock board preview", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Dark mode support")).toBeInTheDocument();
-    expect(screen.getByText("CSV export for reports")).toBeInTheDocument();
-    expect(screen.getByText("Slack integration")).toBeInTheDocument();
-  });
-
-  it("renders the footer", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Built for teams that listen to their users.")).toBeInTheDocument();
-  });
-
-  it("links to register page", () => {
-    render(<HomePage />);
-    const registerLinks = screen.getAllByText(/Get started/);
+    const registerLinks = screen.getAllByRole("link").filter((a) => a.getAttribute("href") === "/register");
+    const loginLinks = screen.getAllByRole("link").filter((a) => a.getAttribute("href") === "/login");
     expect(registerLinks.length).toBeGreaterThan(0);
-    registerLinks.forEach((link) => {
-      expect(link.closest("a")).toHaveAttribute("href", "/register");
-    });
+    expect(loginLinks.length).toBeGreaterThan(0);
   });
 
-  it("links to login page", () => {
+  it("renders feature sections", () => {
     render(<HomePage />);
-    const signInLink = screen.getByText("Sign in");
-    expect(signInLink.closest("a")).toHaveAttribute("href", "/login");
+    expect(screen.getByText("Topic tags")).toBeInTheDocument();
+    expect(screen.getByText("Upvoting")).toBeInTheDocument();
+    expect(screen.getByText("Public roadmap")).toBeInTheDocument();
+    expect(screen.getByText("Instant setup")).toBeInTheDocument();
   });
 });
