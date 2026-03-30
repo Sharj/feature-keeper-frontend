@@ -5,6 +5,7 @@ type RequestOptions = {
   body?: unknown;
   token?: string | null;
   headers?: Record<string, string>;
+  widgetToken?: string | null;
 };
 
 export class ApiError extends Error {
@@ -26,6 +27,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<A
   const { method = "GET", body, token, headers: extraHeaders } = options;
   const headers: Record<string, string> = { "Content-Type": "application/json", ...extraHeaders };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (options.widgetToken) headers["X-Widget-Token"] = options.widgetToken;
 
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -70,6 +72,8 @@ export const projects = {
     request<import("@/types").Project>(`/projects/${id}`, { method: "PATCH", body, token }),
   delete: (token: string, id: number) =>
     request<void>(`/projects/${id}`, { method: "DELETE", token }),
+  regenerateWidgetSecret: (token: string, id: number) =>
+    request<{ widget_secret: string }>(`/projects/${id}/regenerate_widget_secret`, { method: "POST", token }),
 };
 
 // Admin Ideas
@@ -190,10 +194,10 @@ export const publicBoard = {
     const qs = sessionId ? `?session_id=${sessionId}` : "";
     return request<import("@/types").Idea>(`/p/${slug}/ideas/${id}${qs}`);
   },
-  createIdea: (slug: string, body: { title: string; description?: string; author_name: string; author_email: string; topic_ids?: number[] }) =>
-    request<{ id: number; title: string; pending_approval?: boolean }>(`/p/${slug}/ideas`, { method: "POST", body }),
-  vote: (slug: string, ideaId: number, sessionId: string) =>
-    request<{ voted: boolean; votes_count: number }>(`/p/${slug}/ideas/${ideaId}/vote`, { method: "POST", body: { session_id: sessionId } }),
+  createIdea: (slug: string, body: { title: string; description?: string; author_name?: string; author_email?: string; topic_ids?: number[] }, widgetToken?: string) =>
+    request<{ id: number; title: string; pending_approval?: boolean }>(`/p/${slug}/ideas`, { method: "POST", body, widgetToken }),
+  vote: (slug: string, ideaId: number, sessionId: string, widgetToken?: string) =>
+    request<{ voted: boolean; votes_count: number }>(`/p/${slug}/ideas/${ideaId}/vote`, { method: "POST", body: { session_id: sessionId }, widgetToken }),
   updates: (slug: string, params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<{ updates: import("@/types").UpdateEntry[]; meta: import("@/types").PaginationMeta }>(`/p/${slug}/updates${qs}`);
@@ -203,6 +207,6 @@ export const publicBoard = {
   roadmap: (slug: string) => request<import("@/types").RoadmapStatus[]>(`/p/${slug}/roadmap`),
   comments: (slug: string, ideaId: number) =>
     request<import("@/types").Comment[]>(`/p/${slug}/ideas/${ideaId}/comments`),
-  createComment: (slug: string, ideaId: number, body: { body: string; author_name: string; author_email: string }) =>
-    request<import("@/types").Comment>(`/p/${slug}/ideas/${ideaId}/comments`, { method: "POST", body }),
+  createComment: (slug: string, ideaId: number, body: { body: string; author_name?: string; author_email?: string }, widgetToken?: string) =>
+    request<import("@/types").Comment>(`/p/${slug}/ideas/${ideaId}/comments`, { method: "POST", body, widgetToken }),
 };

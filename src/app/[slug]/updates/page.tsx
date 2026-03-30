@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { publicBoard } from "@/lib/api";
 import type { PublicBoard, UpdateEntry, PaginationMeta } from "@/types";
@@ -18,7 +18,12 @@ function formatDate(dateStr: string): string {
 
 export default function PublicUpdatesPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
+
+  const isWidget = searchParams.get("widget") === "true";
+  const widgetToken = searchParams.get("token") || null;
+  const widgetQs = isWidget ? `?widget=true${widgetToken ? '&token=' + widgetToken : ''}` : '';
 
   const [board, setBoard] = useState<PublicBoard | null>(null);
   const [updates, setUpdates] = useState<UpdateEntry[]>([]);
@@ -80,39 +85,66 @@ export default function PublicUpdatesPage() {
       style={{ "--color-accent": board.accent_color } as React.CSSProperties}
     >
       {/* Header */}
-      <header className="border-b border-edge bg-surface">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div>
-            <h1 className="text-3xl font-serif text-ink">{board.name}</h1>
-            <p className="text-subtle mt-1">What&apos;s new and improved</p>
+      {isWidget ? (
+        <div className="bg-surface border-b border-edge">
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex gap-4">
+              <Link
+                href={`/${slug}${widgetQs}`}
+                className="text-sm text-muted pb-2"
+              >
+                Ideas
+              </Link>
+              <Link
+                href={`/${slug}/updates${widgetQs}`}
+                className="text-sm font-medium text-accent border-b-2 border-accent pb-2"
+              >
+                Updates
+              </Link>
+            </div>
+            <button
+              onClick={() => parent.postMessage('featurekeeper:close', '*')}
+              className="p-1 text-muted hover:text-ink rounded cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          <nav className="flex gap-1 mt-6 -mb-px">
-            <Link
-              href={`/${slug}`}
-              className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
-            >
-              Ideas
-            </Link>
-            <Link
-              href={`/${slug}/roadmap`}
-              className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
-            >
-              Roadmap
-            </Link>
-            <Link
-              href={`/${slug}/updates`}
-              className="px-4 py-2 text-sm font-medium text-accent border-b-2 border-accent"
-            >
-              Updates
-            </Link>
-          </nav>
         </div>
-      </header>
+      ) : (
+        <header className="border-b border-edge bg-surface">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div>
+              <h1 className="text-3xl font-serif text-ink">{board.name}</h1>
+              <p className="text-subtle mt-1">What&apos;s new and improved</p>
+            </div>
+            <nav className="flex gap-1 mt-6 -mb-px">
+              <Link
+                href={`/${slug}`}
+                className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
+              >
+                Ideas
+              </Link>
+              <Link
+                href={`/${slug}/roadmap`}
+                className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
+              >
+                Roadmap
+              </Link>
+              <Link
+                href={`/${slug}/updates`}
+                className="px-4 py-2 text-sm font-medium text-accent border-b-2 border-accent"
+              >
+                Updates
+              </Link>
+            </nav>
+          </div>
+        </header>
+      )}
 
       {/* Body */}
-      <div className="max-w-4xl mx-auto px-6 py-6">
-        {/* Tag filter chips */}
-        {availableTags.length > 0 && (
+      <div className={isWidget ? "px-4 py-4" : "max-w-4xl mx-auto px-6 py-6"}>
+        {/* Tag filter chips — hidden in widget mode for compactness */}
+        {!isWidget && availableTags.length > 0 && (
           <div className="flex gap-2 mb-8">
             <button
               onClick={() => {
@@ -188,7 +220,7 @@ export default function PublicUpdatesPage() {
 
                   {/* Title */}
                   <Link
-                    href={`/${slug}/updates/${update.id}`}
+                    href={`/${slug}/updates/${update.id}${widgetQs}`}
                     className="block mt-2"
                   >
                     <h2 className="font-serif text-xl text-ink hover:text-accent transition-colors">
@@ -227,7 +259,7 @@ export default function PublicUpdatesPage() {
                         {update.ideas.map((idea) => (
                           <Link
                             key={idea.id}
-                            href={`/${slug}/ideas/${idea.id}`}
+                            href={`/${slug}/ideas/${idea.id}${widgetQs}`}
                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-edge rounded-lg text-sm text-subtle hover:text-ink hover:border-edge-strong transition-colors"
                           >
                             <span>{idea.title}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, type FormEvent } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { publicBoard, ApiError } from "@/lib/api";
 import { getSessionId } from "@/lib/session";
@@ -21,7 +21,11 @@ type SortOption = "trending" | "most_voted" | "latest";
 export default function PublicBoardPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
+
+  const isWidget = searchParams.get("widget") === "true";
+  const widgetToken = searchParams.get("token") || null;
 
   const [board, setBoard] = useState<PublicBoard | null>(null);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -47,6 +51,9 @@ export default function PublicBoardPage() {
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitPendingApproval, setSubmitPendingApproval] = useState(false);
+
+  // Helper to build widget query string suffix
+  const widgetQs = isWidget ? `?widget=true${widgetToken ? '&token=' + widgetToken : ''}` : '';
 
   useEffect(() => {
     setSessionId(getSessionId(slug));
@@ -94,7 +101,7 @@ export default function PublicBoardPage() {
       )
     );
     try {
-      const res = await publicBoard.vote(slug, ideaId, sessionId);
+      const res = await publicBoard.vote(slug, ideaId, sessionId, widgetToken || undefined);
       setIdeas((prev) =>
         prev.map((i) =>
           i.id === ideaId
@@ -123,21 +130,26 @@ export default function PublicBoardPage() {
     setSubmitError("");
     setSubmitLoading(true);
     try {
-      const res = await publicBoard.createIdea(slug, {
+      const body: { title: string; description?: string; author_name?: string; author_email?: string; topic_ids?: number[] } = {
         title: submitTitle,
         description: submitDesc || undefined,
-        author_name: submitName,
-        author_email: submitEmail,
         topic_ids: submitTopicIds.length > 0 ? submitTopicIds : undefined,
-      });
+      };
+      if (!widgetToken) {
+        body.author_name = submitName;
+        body.author_email = submitEmail;
+      }
+      const res = await publicBoard.createIdea(slug, body, widgetToken || undefined);
       setSubmitPendingApproval(!!res.data.pending_approval);
       setSubmitSuccess(true);
       setSubmitTitle("");
       setSubmitDesc("");
       setSubmitTopicIds([]);
       // Store name/email for reuse
-      localStorage.setItem("fk_author_name", submitName);
-      localStorage.setItem("fk_author_email", submitEmail);
+      if (!widgetToken) {
+        localStorage.setItem("fk_author_name", submitName);
+        localStorage.setItem("fk_author_email", submitEmail);
+      }
       fetchIdeas();
       setTimeout(() => {
         setShowSubmitModal(false);
@@ -154,10 +166,12 @@ export default function PublicBoardPage() {
 
   function openSubmitModal() {
     // Pre-fill stored author info
-    const storedName = localStorage.getItem("fk_author_name") || "";
-    const storedEmail = localStorage.getItem("fk_author_email") || "";
-    if (storedName) setSubmitName(storedName);
-    if (storedEmail) setSubmitEmail(storedEmail);
+    if (!widgetToken) {
+      const storedName = localStorage.getItem("fk_author_name") || "";
+      const storedEmail = localStorage.getItem("fk_author_email") || "";
+      if (storedName) setSubmitName(storedName);
+      if (storedEmail) setSubmitEmail(storedEmail);
+    }
     setShowSubmitModal(true);
   }
 
@@ -181,171 +195,203 @@ export default function PublicBoardPage() {
       style={{ "--color-accent": board.accent_color } as React.CSSProperties}
     >
       {/* Header */}
-      <header className="border-b border-edge bg-surface">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-serif text-ink">{board.name}</h1>
-              <p className="text-subtle mt-1">Help us build a better product</p>
+      {isWidget ? (
+        <div className="bg-surface border-b border-edge">
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-1">
+              <Button size="sm" onClick={openSubmitModal}>Submit Idea</Button>
             </div>
-            <Button onClick={openSubmitModal}>Submit Idea</Button>
+            <div className="flex gap-4">
+              <Link
+                href={`/${slug}${widgetQs}`}
+                className="text-sm font-medium text-accent border-b-2 border-accent pb-2"
+              >
+                Ideas
+              </Link>
+              <Link
+                href={`/${slug}/updates${widgetQs}`}
+                className="text-sm text-muted pb-2"
+              >
+                Updates
+              </Link>
+            </div>
+            <button
+              onClick={() => parent.postMessage('featurekeeper:close', '*')}
+              className="p-1 text-muted hover:text-ink rounded cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          <nav className="flex gap-1 mt-6 -mb-px">
-            <Link
-              href={`/${slug}`}
-              className="px-4 py-2 text-sm font-medium text-accent border-b-2 border-accent"
-            >
-              Ideas
-            </Link>
-            <Link
-              href={`/${slug}/roadmap`}
-              className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
-            >
-              Roadmap
-            </Link>
-            <Link
-              href={`/${slug}/updates`}
-              className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
-            >
-              Updates
-            </Link>
-          </nav>
         </div>
-      </header>
+      ) : (
+        <header className="border-b border-edge bg-surface">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-serif text-ink">{board.name}</h1>
+                <p className="text-subtle mt-1">Help us build a better product</p>
+              </div>
+              <Button onClick={openSubmitModal}>Submit Idea</Button>
+            </div>
+            <nav className="flex gap-1 mt-6 -mb-px">
+              <Link
+                href={`/${slug}`}
+                className="px-4 py-2 text-sm font-medium text-accent border-b-2 border-accent"
+              >
+                Ideas
+              </Link>
+              <Link
+                href={`/${slug}/roadmap`}
+                className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
+              >
+                Roadmap
+              </Link>
+              <Link
+                href={`/${slug}/updates`}
+                className="px-4 py-2 text-sm font-medium text-muted hover:text-ink border-b-2 border-transparent"
+              >
+                Updates
+              </Link>
+            </nav>
+          </div>
+        </header>
+      )}
 
       {/* Body */}
-      <div className="max-w-6xl mx-auto px-6 py-6 flex gap-6">
-        {/* Sidebar */}
-        <aside className="w-[220px] shrink-0 hidden md:block">
-          <div className="sticky top-6 space-y-6">
-            {/* Search */}
-            <Input
-              placeholder="Search ideas..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="!py-2 !text-sm"
-            />
+      <div className={isWidget ? "px-4 py-4 flex gap-4" : "max-w-6xl mx-auto px-6 py-6 flex gap-6"}>
+        {/* Sidebar — hidden in widget mode */}
+        {!isWidget && (
+          <aside className="w-[220px] shrink-0 hidden md:block">
+            <div className="sticky top-6 space-y-6">
+              {/* Search */}
+              <Input
+                placeholder="Search ideas..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="!py-2 !text-sm"
+              />
 
-            {/* Sort */}
-            <div>
-              <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
-                Sort by
-              </h3>
-              <div className="space-y-0.5">
-                {sortOptions.map((opt) => (
-                  <button
-                    key={opt.key}
-                    onClick={() => {
-                      setSort(opt.key);
-                      setPage(1);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
-                      sort === opt.key
-                        ? "bg-accent-soft text-accent font-medium"
-                        : "text-subtle hover:text-ink hover:bg-cream"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              {/* Sort */}
+              <div>
+                <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
+                  Sort by
+                </h3>
+                <div className="space-y-0.5">
+                  {sortOptions.map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => {
+                        setSort(opt.key);
+                        setPage(1);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
+                        sort === opt.key
+                          ? "bg-accent-soft text-accent font-medium"
+                          : "text-subtle hover:text-ink hover:bg-cream"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Status filter */}
+              {board.statuses.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
+                    Status
+                  </h3>
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setStatusFilter("");
+                        setPage(1);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
+                        !statusFilter
+                          ? "bg-accent-soft text-accent font-medium"
+                          : "text-subtle hover:text-ink hover:bg-cream"
+                      }`}
+                    >
+                      All
+                    </button>
+                    {board.statuses.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setStatusFilter(String(s.id));
+                          setPage(1);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                          statusFilter === String(s.id)
+                            ? "bg-accent-soft text-accent font-medium"
+                            : "text-subtle hover:text-ink hover:bg-cream"
+                        }`}
+                      >
+                        <ColorDot color={s.color} />
+                        <span className="flex-1 truncate">{s.name}</span>
+                        <span className="text-xs text-muted">{s.ideas_count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Topics filter */}
+              {board.topics.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
+                    Topics
+                  </h3>
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setTopicFilter("");
+                        setPage(1);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
+                        !topicFilter
+                          ? "bg-accent-soft text-accent font-medium"
+                          : "text-subtle hover:text-ink hover:bg-cream"
+                      }`}
+                    >
+                      All
+                    </button>
+                    {board.topics.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setTopicFilter(String(t.id));
+                          setPage(1);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                          topicFilter === String(t.id)
+                            ? "bg-accent-soft text-accent font-medium"
+                            : "text-subtle hover:text-ink hover:bg-cream"
+                        }`}
+                      >
+                        <span style={{ color: t.color }} className="font-bold text-xs">
+                          #
+                        </span>
+                        <span className="flex-1 truncate">{t.name}</span>
+                        <span className="text-xs text-muted">{t.ideas_count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Status filter */}
-            {board.statuses.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
-                  Status
-                </h3>
-                <div className="space-y-0.5">
-                  <button
-                    onClick={() => {
-                      setStatusFilter("");
-                      setPage(1);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
-                      !statusFilter
-                        ? "bg-accent-soft text-accent font-medium"
-                        : "text-subtle hover:text-ink hover:bg-cream"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {board.statuses.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => {
-                        setStatusFilter(String(s.id));
-                        setPage(1);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                        statusFilter === String(s.id)
-                          ? "bg-accent-soft text-accent font-medium"
-                          : "text-subtle hover:text-ink hover:bg-cream"
-                      }`}
-                    >
-                      <ColorDot color={s.color} />
-                      <span className="flex-1 truncate">{s.name}</span>
-                      <span className="text-xs text-muted">{s.ideas_count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Topics filter */}
-            {board.topics.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">
-                  Topics
-                </h3>
-                <div className="space-y-0.5">
-                  <button
-                    onClick={() => {
-                      setTopicFilter("");
-                      setPage(1);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
-                      !topicFilter
-                        ? "bg-accent-soft text-accent font-medium"
-                        : "text-subtle hover:text-ink hover:bg-cream"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {board.topics.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        setTopicFilter(String(t.id));
-                        setPage(1);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                        topicFilter === String(t.id)
-                          ? "bg-accent-soft text-accent font-medium"
-                          : "text-subtle hover:text-ink hover:bg-cream"
-                      }`}
-                    >
-                      <span style={{ color: t.color }} className="font-bold text-xs">
-                        #
-                      </span>
-                      <span className="flex-1 truncate">{t.name}</span>
-                      <span className="text-xs text-muted">{t.ideas_count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
+          </aside>
+        )}
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          {/* Mobile search */}
-          <div className="md:hidden mb-4">
+          {/* Mobile search (and widget search) */}
+          <div className={isWidget ? "mb-3" : "md:hidden mb-4"}>
             <Input
               placeholder="Search ideas..."
               value={search}
@@ -353,6 +399,7 @@ export default function PublicBoardPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
+              className={isWidget ? "!py-2 !text-sm" : ""}
             />
           </div>
 
@@ -371,7 +418,7 @@ export default function PublicBoardPage() {
                   key={idea.id}
                   className="flex items-start gap-4 p-4 hover:bg-cream/50 transition-colors cursor-pointer animate-slide-up"
                   style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
-                  onClick={() => router.push(`/${slug}/ideas/${idea.id}`)}
+                  onClick={() => router.push(`/${slug}/ideas/${idea.id}${widgetQs}`)}
                 >
                   {/* Vote button */}
                   <button
@@ -525,23 +572,25 @@ export default function PublicBoardPage() {
               placeholder="Explain your idea in more detail..."
               rows={4}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Your Name"
-                required
-                value={submitName}
-                onChange={(e) => setSubmitName(e.target.value)}
-                placeholder="Jane Smith"
-              />
-              <Input
-                label="Email"
-                required
-                type="email"
-                value={submitEmail}
-                onChange={(e) => setSubmitEmail(e.target.value)}
-                placeholder="jane@example.com"
-              />
-            </div>
+            {!widgetToken && (
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Your Name"
+                  required
+                  value={submitName}
+                  onChange={(e) => setSubmitName(e.target.value)}
+                  placeholder="Jane Smith"
+                />
+                <Input
+                  label="Email"
+                  required
+                  type="email"
+                  value={submitEmail}
+                  onChange={(e) => setSubmitEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                />
+              </div>
+            )}
             {board.topics.length > 0 && (
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-ink">

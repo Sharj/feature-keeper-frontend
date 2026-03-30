@@ -30,6 +30,7 @@ export interface Project {
   website_url: string | null;
   accent_color: string;
   require_approval: boolean;
+  widget_secret?: string;
   plan: Plan;
   ideas_count: number;
   statuses: Status[];

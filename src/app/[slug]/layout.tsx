@@ -1,6 +1,20 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function PublicBoardLayout({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+  const isWidget = searchParams.get("widget") === "true";
+
+  if (isWidget) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col overflow-y-auto">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <div className="flex-1">{children}</div>

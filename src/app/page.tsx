@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Script from "next/script";
 
 export default function HomePage() {
   return (
@@ -555,6 +556,20 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+      <Script
+        id="featurekeeper-widget-config"
+        strategy="lazyOnload"
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.FeatureKeeper = window.FeatureKeeper || [];
+            FeatureKeeper.push({
+              project: 'feature-keeper',
+              baseUrl: window.location.origin
+            });
+          `,
+        }}
+      />
+      <Script src="/widget/v1/widget.js" strategy="lazyOnload" />
     </div>
   );
 }

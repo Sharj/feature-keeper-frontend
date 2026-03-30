@@ -32,12 +32,19 @@ export default function GeneralSettingsPage() {
   const [projSuccess, setProjSuccess] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // Widget
+  const [widgetSecret, setWidgetSecret] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [copySuccess, setCopySuccess] = useState("");
+
   useEffect(() => {
     if (!currentProject) return;
     setProjName(currentProject.name);
     setProjWebsite(currentProject.website_url || "");
     setProjSlug(currentProject.slug);
     setProjAccent(currentProject.accent_color);
+    setWidgetSecret(currentProject.widget_secret || "");
   }, [currentProject]);
 
   async function handleProjectSave(e: FormEvent) {
@@ -64,6 +71,39 @@ export default function GeneralSettingsPage() {
       setProjSaving(false);
     }
   }
+
+  async function handleRegenerateSecret() {
+    if (!token || !currentProject) return;
+    if (!window.confirm("Regenerate widget secret? Existing widget tokens will stop working.")) return;
+    setRegenerating(true);
+    try {
+      const res = await projects.regenerateWidgetSecret(token, currentProject.id);
+      setWidgetSecret(res.data.widget_secret);
+      await refreshProjects();
+    } catch {
+      // ignore
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  function copyToClipboard(text: string, label: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopySuccess(label);
+      setTimeout(() => setCopySuccess(""), 2000);
+    });
+  }
+
+  const embedSnippet = currentProject ? `<!-- Feature Keeper Widget -->
+<script>
+  window.FeatureKeeper = window.FeatureKeeper || [];
+  FeatureKeeper.push({
+    project: '${currentProject.slug}',
+    // Optional: identify the user
+    // user: { token: 'JWT_TOKEN_HERE' },
+  });
+</script>
+<script async src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget/v1/widget.js"></script>` : "";
 
   async function handleDeleteProject() {
     if (!token || !currentProject) return;
@@ -176,6 +216,78 @@ export default function GeneralSettingsPage() {
             {projSaving ? "Saving..." : "Save Changes"}
           </Button>
         </form>
+      </Card>
+
+      {/* Widget */}
+      <h2 className="font-serif text-lg text-ink">Widget</h2>
+      <Card padding="lg">
+        <div className="space-y-5">
+          {/* Widget Secret */}
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Widget Secret</label>
+            <p className="text-xs text-muted mb-2">Use this secret server-side to generate JWT tokens for identified users.</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-cream border border-edge rounded-lg px-3 py-2 text-sm text-ink font-mono truncate">
+                {showSecret ? (widgetSecret || "Not generated yet") : (widgetSecret ? "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" : "Not generated yet")}
+              </code>
+              {widgetSecret && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowSecret(!showSecret)}
+                  >
+                    {showSecret ? "Hide" : "Show"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => copyToClipboard(widgetSecret, "secret")}
+                  >
+                    {copySuccess === "secret" ? "Copied!" : "Copy"}
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={regenerating}
+                onClick={handleRegenerateSecret}
+              >
+                {regenerating ? "..." : "Regenerate"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Embed Code */}
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Embed Code</label>
+            <p className="text-xs text-muted mb-2">Add this snippet to your website to show the feedback widget.</p>
+            <div className="relative">
+              <pre className="bg-cream border border-edge rounded-lg p-4 text-xs text-ink font-mono overflow-x-auto whitespace-pre-wrap">
+                {embedSnippet}
+              </pre>
+              <button
+                onClick={() => copyToClipboard(embedSnippet, "embed")}
+                className="absolute top-2 right-2 px-2.5 py-1 bg-surface border border-edge rounded-md text-xs text-subtle hover:text-ink hover:border-edge-strong transition-colors cursor-pointer"
+              >
+                {copySuccess === "embed" ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+
+          {/* Preview link */}
+          <div>
+            <a
+              href={`/${currentProject.slug}?widget=true`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-accent hover:underline"
+            >
+              Preview widget &rarr;
+            </a>
+          </div>
+        </div>
       </Card>
 
       {/* Delete Project */}

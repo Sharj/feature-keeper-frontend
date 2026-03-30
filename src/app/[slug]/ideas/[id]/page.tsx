@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { publicBoard, ApiError } from "@/lib/api";
 import { getSessionId } from "@/lib/session";
@@ -26,8 +26,13 @@ function timeAgo(dateStr: string): string {
 
 export default function PublicIdeaDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
   const id = Number(params.id);
+
+  const isWidget = searchParams.get("widget") === "true";
+  const widgetToken = searchParams.get("token") || null;
+  const widgetQs = isWidget ? `?widget=true${widgetToken ? '&token=' + widgetToken : ''}` : '';
 
   const [idea, setIdea] = useState<Idea | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -46,15 +51,20 @@ export default function PublicIdeaDetailPage() {
     const sid = getSessionId(slug);
     setSessionId(sid);
 
-    // Restore stored author info
-    const storedName = localStorage.getItem("fk_author_name") || "";
-    const storedEmail = localStorage.getItem("fk_author_email") || "";
-    if (storedName && storedEmail) {
-      setAuthorName(storedName);
-      setAuthorEmail(storedEmail);
+    // Restore stored author info (only when no widget token)
+    if (!widgetToken) {
+      const storedName = localStorage.getItem("fk_author_name") || "";
+      const storedEmail = localStorage.getItem("fk_author_email") || "";
+      if (storedName && storedEmail) {
+        setAuthorName(storedName);
+        setAuthorEmail(storedEmail);
+        setShowAuthorFields(false);
+      }
+    } else {
+      // Widget token present — hide author fields
       setShowAuthorFields(false);
     }
-  }, [slug]);
+  }, [slug, widgetToken]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -80,7 +90,7 @@ export default function PublicIdeaDetailPage() {
       votes_count: idea.voted ? idea.votes_count - 1 : idea.votes_count + 1,
     });
     try {
-      const res = await publicBoard.vote(slug, idea.id, sessionId);
+      const res = await publicBoard.vote(slug, idea.id, sessionId, widgetToken || undefined);
       setIdea((prev) =>
         prev
           ? { ...prev, voted: res.data.voted, votes_count: res.data.votes_count }
@@ -104,24 +114,30 @@ export default function PublicIdeaDetailPage() {
 
   async function handleComment(e: FormEvent) {
     e.preventDefault();
-    if (!commentBody.trim() || !authorName.trim() || !authorEmail.trim()) return;
+    if (!commentBody.trim()) return;
+    if (!widgetToken && (!authorName.trim() || !authorEmail.trim())) return;
     setCommentError("");
     setCommentLoading(true);
     try {
-      const res = await publicBoard.createComment(slug, id, {
+      const body: { body: string; author_name?: string; author_email?: string } = {
         body: commentBody,
-        author_name: authorName,
-        author_email: authorEmail,
-      });
+      };
+      if (!widgetToken) {
+        body.author_name = authorName;
+        body.author_email = authorEmail;
+      }
+      const res = await publicBoard.createComment(slug, id, body, widgetToken || undefined);
       setComments((prev) => [...prev, res.data]);
       setCommentBody("");
       setIdea((prev) =>
         prev ? { ...prev, comments_count: prev.comments_count + 1 } : prev
       );
       // Persist author info
-      localStorage.setItem("fk_author_name", authorName);
-      localStorage.setItem("fk_author_email", authorEmail);
-      setShowAuthorFields(false);
+      if (!widgetToken) {
+        localStorage.setItem("fk_author_name", authorName);
+        localStorage.setItem("fk_author_email", authorEmail);
+        setShowAuthorFields(false);
+      }
     } catch (err) {
       setCommentError(
         err instanceof ApiError ? err.message : "Failed to post comment"
@@ -140,200 +156,227 @@ export default function PublicIdeaDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 animate-fade-in">
-      {/* Back link */}
-      <Link
-        href={`/${slug}`}
-        className="inline-flex items-center gap-1.5 text-sm text-subtle hover:text-ink transition-colors mb-6"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
-        Back to ideas
-      </Link>
-
-      {/* Idea header */}
-      <div className="flex items-start gap-4">
-        {/* Vote button */}
-        <button
-          onClick={handleVote}
-          className={`flex flex-col items-center justify-center min-w-[56px] py-3 rounded-xl border-2 transition-all cursor-pointer shrink-0 ${
-            idea.voted
-              ? "bg-accent-soft border-accent text-accent"
-              : "bg-surface border-edge text-subtle hover:border-edge-strong"
-          }`}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill={idea.voted ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m18 15-6-6-6 6" />
-          </svg>
-          <span className="text-base font-bold">{idea.votes_count}</span>
-        </button>
-
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-serif text-ink">{idea.title}</h1>
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            {idea.status && (
-              <Badge color={idea.status.color} dot size="sm">
-                {idea.status.name}
-              </Badge>
-            )}
-            {idea.topics.map((t) => (
-              <Badge key={t.id} color={t.color} size="sm">
-                {t.name}
-              </Badge>
-            ))}
-            <span className="text-xs text-muted">
-              by {idea.author_name}
-            </span>
-            <span className="text-xs text-muted">
-              {timeAgo(idea.created_at)}
-            </span>
+    <div>
+      {/* Widget compact header */}
+      {isWidget && (
+        <div className="bg-surface border-b border-edge">
+          <div className="flex items-center justify-between px-4 py-2">
+            <Link
+              href={`/${slug}${widgetQs}`}
+              className="inline-flex items-center gap-1.5 text-sm text-subtle hover:text-ink transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              Back
+            </Link>
+            <button
+              onClick={() => parent.postMessage('featurekeeper:close', '*')}
+              className="p-1 text-muted hover:text-ink rounded cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Shipped banner */}
-      {idea.updates && idea.updates.length > 0 && (
-        <div className="bg-positive-soft border border-positive/20 rounded-lg px-4 py-3 text-sm flex items-center gap-2 mt-4">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-positive shrink-0">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-          <span>
-            <span className="text-positive font-medium">Shipped!</span>
-            {" "}This idea was addressed in{" "}
-            {idea.updates.map((u, i) => (
-              <span key={u.id}>
-                {i > 0 && ", "}
-                <Link href={`/${slug}/updates/${u.id}`} className="text-positive underline font-medium">{u.title}</Link>
+      <div className={isWidget ? "px-4 py-4 animate-fade-in" : "max-w-3xl mx-auto px-6 py-8 animate-fade-in"}>
+        {/* Back link (non-widget) */}
+        {!isWidget && (
+          <Link
+            href={`/${slug}`}
+            className="inline-flex items-center gap-1.5 text-sm text-subtle hover:text-ink transition-colors mb-6"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Back to ideas
+          </Link>
+        )}
+
+        {/* Idea header */}
+        <div className="flex items-start gap-4">
+          {/* Vote button */}
+          <button
+            onClick={handleVote}
+            className={`flex flex-col items-center justify-center min-w-[56px] py-3 rounded-xl border-2 transition-all cursor-pointer shrink-0 ${
+              idea.voted
+                ? "bg-accent-soft border-accent text-accent"
+                : "bg-surface border-edge text-subtle hover:border-edge-strong"
+            }`}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={idea.voted ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m18 15-6-6-6 6" />
+            </svg>
+            <span className="text-base font-bold">{idea.votes_count}</span>
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <h1 className={isWidget ? "text-lg font-serif text-ink" : "text-2xl font-serif text-ink"}>{idea.title}</h1>
+
+            {/* Meta row */}
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              {idea.status && (
+                <Badge color={idea.status.color} dot size="sm">
+                  {idea.status.name}
+                </Badge>
+              )}
+              {idea.topics.map((t) => (
+                <Badge key={t.id} color={t.color} size="sm">
+                  {t.name}
+                </Badge>
+              ))}
+              <span className="text-xs text-muted">
+                by {idea.author_name}
               </span>
-            ))}
-          </span>
+              <span className="text-xs text-muted">
+                {timeAgo(idea.created_at)}
+              </span>
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Description */}
-      {idea.description && (
-        <div className="mt-6 text-subtle whitespace-pre-wrap leading-relaxed">
-          {idea.description}
-        </div>
-      )}
-
-      {/* Divider */}
-      <hr className="border-edge my-8" />
-
-      {/* Comments */}
-      <div>
-        <h2 className="text-lg font-serif text-ink mb-4">
-          Comments{" "}
-          <span className="text-muted text-sm font-sans">
-            ({idea.comments_count})
-          </span>
-        </h2>
-
-        {comments.length === 0 ? (
-          <p className="text-sm text-muted py-4">No comments yet. Be the first!</p>
-        ) : (
-          <div className="space-y-3 mb-6">
-            {comments.map((c, i) => (
-              <div
-                key={c.id}
-                className={`p-4 rounded-lg text-sm animate-slide-up ${
-                  c.is_official
-                    ? "border-l-2 border-accent bg-inform-soft"
-                    : "bg-surface border border-edge"
-                }`}
-                style={{
-                  animationDelay: `${i * 40}ms`,
-                  animationFillMode: "both",
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="font-medium text-ink">
-                    {c.author.name}
-                  </span>
-                  {c.author.is_admin && (
-                    <Badge variant="info" size="sm">
-                      Team
-                    </Badge>
-                  )}
-                  <span className="text-xs text-muted ml-auto">
-                    {timeAgo(c.created_at)}
-                  </span>
-                </div>
-                <p className="text-subtle whitespace-pre-wrap">{c.body}</p>
-              </div>
-            ))}
+        {/* Shipped banner */}
+        {idea.updates && idea.updates.length > 0 && (
+          <div className="bg-positive-soft border border-positive/20 rounded-lg px-4 py-3 text-sm flex items-center gap-2 mt-4">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-positive shrink-0">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <span>
+              <span className="text-positive font-medium">Shipped!</span>
+              {" "}This idea was addressed in{" "}
+              {idea.updates.map((u, i) => (
+                <span key={u.id}>
+                  {i > 0 && ", "}
+                  <Link href={`/${slug}/updates/${u.id}${widgetQs}`} className="text-positive underline font-medium">{u.title}</Link>
+                </span>
+              ))}
+            </span>
           </div>
         )}
 
-        {/* Comment form */}
-        <form onSubmit={handleComment} className="space-y-3 mt-4">
-          {commentError && (
-            <div className="p-3 bg-critical-soft text-critical rounded-lg text-sm">
-              {commentError}
+        {/* Description */}
+        {idea.description && (
+          <div className="mt-6 text-subtle whitespace-pre-wrap leading-relaxed">
+            {idea.description}
+          </div>
+        )}
+
+        {/* Divider */}
+        <hr className="border-edge my-8" />
+
+        {/* Comments */}
+        <div>
+          <h2 className="text-lg font-serif text-ink mb-4">
+            Comments{" "}
+            <span className="text-muted text-sm font-sans">
+              ({idea.comments_count})
+            </span>
+          </h2>
+
+          {comments.length === 0 ? (
+            <p className="text-sm text-muted py-4">No comments yet. Be the first!</p>
+          ) : (
+            <div className="space-y-3 mb-6">
+              {comments.map((c, i) => (
+                <div
+                  key={c.id}
+                  className={`p-4 rounded-lg text-sm animate-slide-up ${
+                    c.is_official
+                      ? "border-l-2 border-accent bg-inform-soft"
+                      : "bg-surface border border-edge"
+                  }`}
+                  style={{
+                    animationDelay: `${i * 40}ms`,
+                    animationFillMode: "both",
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-medium text-ink">
+                      {c.author.name}
+                    </span>
+                    {c.author.is_admin && (
+                      <Badge variant="info" size="sm">
+                        Team
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted ml-auto">
+                      {timeAgo(c.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-subtle whitespace-pre-wrap">{c.body}</p>
+                </div>
+              ))}
             </div>
           )}
-          {showAuthorFields && (
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                placeholder="Your name"
-                required
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-              />
-              <Input
-                placeholder="Your email"
-                required
-                type="email"
-                value={authorEmail}
-                onChange={(e) => setAuthorEmail(e.target.value)}
-              />
-            </div>
-          )}
-          {!showAuthorFields && (
-            <p className="text-xs text-muted">
-              Commenting as{" "}
-              <span className="font-medium text-subtle">{authorName}</span>
-              <button
-                type="button"
-                onClick={() => setShowAuthorFields(true)}
-                className="ml-1.5 text-accent hover:underline cursor-pointer"
-              >
-                Change
-              </button>
-            </p>
-          )}
-          <Textarea
-            placeholder="Write a comment..."
-            required
-            value={commentBody}
-            onChange={(e) => setCommentBody(e.target.value)}
-            rows={3}
-          />
-          <Button type="submit" loading={commentLoading} size="sm">
-            {commentLoading ? "Posting..." : "Post Comment"}
-          </Button>
-        </form>
+
+          {/* Comment form */}
+          <form onSubmit={handleComment} className="space-y-3 mt-4">
+            {commentError && (
+              <div className="p-3 bg-critical-soft text-critical rounded-lg text-sm">
+                {commentError}
+              </div>
+            )}
+            {!widgetToken && showAuthorFields && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  placeholder="Your name"
+                  required
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                />
+                <Input
+                  placeholder="Your email"
+                  required
+                  type="email"
+                  value={authorEmail}
+                  onChange={(e) => setAuthorEmail(e.target.value)}
+                />
+              </div>
+            )}
+            {!widgetToken && !showAuthorFields && (
+              <p className="text-xs text-muted">
+                Commenting as{" "}
+                <span className="font-medium text-subtle">{authorName}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthorFields(true)}
+                  className="ml-1.5 text-accent hover:underline cursor-pointer"
+                >
+                  Change
+                </button>
+              </p>
+            )}
+            <Textarea
+              placeholder="Write a comment..."
+              required
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              rows={3}
+            />
+            <Button type="submit" loading={commentLoading} size="sm">
+              {commentLoading ? "Posting..." : "Post Comment"}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
